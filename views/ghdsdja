@@ -1,8 +1,4 @@
-Network error. Please try again
+http://localhost:7000/register?error=Invalid%20verification%20link.
 
-
-Restarting 'app.js'
-[dotenv@17.2.3] injecting env (7) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
-Server running on port 7000
-Database Connected: ac-knghigp-shard-00-00.f9a85hv.mongodb.net
-Verification email sent successfully: 734dc002-b25a-4aef-a50a-85c5c90f4b8b
+Error
+Invalid verification link.

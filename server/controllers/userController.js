@@ -284,8 +284,12 @@ module.exports.register_post = async (req, res) => {
       success: false,
       errors,
       message: errorMsg
-    });
+    }); 
   }
+};
+
+module.exports.verifyEmailPage = (req, res) => {
+  res.render("verify-email");
 };
 
 // verify email functionalities

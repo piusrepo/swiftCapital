@@ -2,7 +2,7 @@ const express = require("express");
 
 const router = express.Router();
 
-const { homePage, registerPage, loginPage, register_post,verifyEmail, login_post, loginAdmin, logout_get, helpPage, forexPage, cryptoPage, stocksPage, optionsPage, copyPage, securityPage, termsPage, licensesPage, aboutPage, alertsPage, faqPage, privacyPage, contactPage } = require("../controllers/userController");
+const { homePage, registerPage, loginPage, register_post,verifyEmail, login_post, loginAdmin, logout_get, helpPage, forexPage, cryptoPage, stocksPage, optionsPage, copyPage, securityPage, termsPage, licensesPage, aboutPage, alertsPage, faqPage, privacyPage, contactPage, verifyEmailPage } = require("../controllers/userController");
 const { loginAdmin_post } = require("../controllers/adminController");
 
 router.get("/", homePage);
@@ -18,6 +18,13 @@ router.get("/privacy-policy", privacyPage);
 
 router.get("/register", registerPage);
 router.post('/register',register_post);
+
+router.get('/verify-email', (req, res, next) => {
+  if (!req.query.user || !req.query.ver_code) {
+    return verifyEmailPage(req, res);
+  }
+  next();
+});
 router.get('/verify-email', verifyEmail);
 
 router.get("/login", loginPage);

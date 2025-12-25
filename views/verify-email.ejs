@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zxx">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="assets/css/bootstrap.min.css">
+  <link rel="stylesheet" href="assets/css/flaticon.css">
+  <link rel="stylesheet" href="assets/css/remixicon.css">
+  <link rel="stylesheet" href="assets/css/owl.carousel.min.css">
+  <link rel="stylesheet" href="assets/css/odometer.min.css">
+  <link rel="stylesheet" href="assets/css/fancybox.css">
+  <link rel="stylesheet" href="assets/css/aos.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+  <link rel="stylesheet" href="assets/css/dark-theme.css">
+  <link rel="stylesheet" href="sweetalert/dist/sweetalert2.min.css">
+  <link rel="shortcut icon" href="assets/img/gkgr73S0C0AVl3XX0UUQh8Ffr0fmzCSK4EhmlcPQ.jpg" type="image/png">
+  <title>Verify Your Email - Capital Swift</title>
+  <style>
+    .verify-section {
+      min-height: 70vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 50px 20px;
+    }
+    .verify-box {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .verify-box i {
+      font-size: 80px;
+      color: #3F3EED;
+      margin-bottom: 20px;
+    }
+    .verify-box h2 {
+      font-size: 32px;
+      margin-bottom: 20px;
+      color: #F5F6F5;
+    }
+    .verify-box p {
+      font-size: 18px;
+      color: #ccc;
+      margin-bottom: 30px;
+    }
+    .resend-link {
+      color: #3F3EED;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="switch-theme-mode">
+    <label id="switch" class="switch">
+      <input type="checkbox" onchange="toggleTheme()" id="slider">
+      <span class="slider round"></span>
+    </label>
+  </div>
+
+  <div class="page-wrapper">
+
+
+    <div class="content-wrapper">
+
+      <div class="breadcrumb-wrap bg-f br-1">
+        <div class="container">
+          <div class="breadcrumb-title">
+            <h2>Email Verification</h2>
+            <ul class="breadcrumb-menu list-style">
+              <li><a href="/">Home</a></li>
+              <li>Verify Email</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <section class="verify-section">
+        <div class="container">
+          <div class="verify-box">
+            <i class="ri-mail-send-line"></i>
+            <h2>Check Your Email</h2>
+            <p>
+              We have sent a verification link to your email address.<br>
+              Please click the link in the email to activate your account.
+            </p>
+            <p>
+              Didn't receive the email? Check your spam/junk folder or 
+              <a href="/register" class="resend-link">register again</a>.
+            </p>
+            <a href="/login" class="btn style1 mt-3">
+              Go to Login Page <i class="ri-arrow-right-s-line"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+
+  </div>
+
+  <a href="javascript:void(0)" class="back-to-top bounce"><i class="ri-arrow-up-s-line"></i></a>
+
+  <!-- SweetAlert for query param messages -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const success = urlParams.get('success');
+      const error = urlParams.get('error');
+
+      if (success) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: decodeURIComponent(success),
+          confirmButtonColor: '#3F3EED',
+          timer: 5000,
+          timerProgressBar: true
+        });
+      } else if (error) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: decodeURIComponent(error),
+          confirmButtonColor: '#3F3EED'
+        });
+      }
+    });
+  </script>
+
+  <!-- Your existing scripts -->
+  <script src="js/jquery.min.js"></script>
+  <script src="js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/aos.js"></script>
+  <script src="assets/js/owl.carousel.min.js"></script>
+  <script src="assets/js/odometer.min.js"></script>
+  <script src="assets/js/jquery.countdown.min.js"></script>
+  <script src="assets/js/fancybox.js"></script>
+  <script src="assets/js/jquery.appear.js"></script>
+  <script src="assets/js/tweenmax.min.js"></script>
+  <script src="assets/js/main.js"></script>
+
+</body>
+</html>
