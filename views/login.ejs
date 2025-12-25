@@ -253,10 +253,9 @@
                                  <div class="col-lg-12">
                                     <div class="form-group">
                                        <label for="account_number">Email</label>
-                                       <input style="text-align:center" id="account_no" name="account_no" type=
-"text" placeholder="email">
+                                      <input style="text-align:center" id="email" name="email" type="text" placeholder="email">
                                     </div>
-                                    <span class="account_no error"></span>
+                                    <span class="email error"></span>
                                  </div>
                                  <div class="col-lg-12">
                                     <div class="form-group">
@@ -397,41 +396,55 @@
 
   <a href="javascript:void(0)" class="back-to-top bounce"><i class="ri-arrow-up-s-line"></i></a>
 
-  <script>
-    const form = document.querySelector('form');
-     const emailError = document.querySelector('.account_no.error');
-     const passwordError = document.querySelector('.password.error');
-     form.addEventListener('submit', async (e) => {
-       e.preventDefault();
-       // reset errors
-       emailError.textContent = '';
-       passwordError.textContent = '';
-       // get values
-       const account_no = form.account_no.value;
-       const password = form.password.value;
-       try {
-         const res = await fetch('/login', { 
-           method: 'POST', 
-           body: JSON.stringify({ account_no, password }),
-           headers: {'Content-Type': 'application/json'}
-         });
-         const data = await res.json();
-         // console.log(data);
-         if (data.errors) {
-           emailError.textContent = data.errors.account_no;
-           passwordError.textContent = data.errors.password;
-         }
-         if (data.user) {
-           location.assign('/dashboard');
-         }
-       }
-       catch (err) {
-         console.log(err);
-       }
-     });
-   
-   
-   </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const success = urlParams.get('success');
+  const error = urlParams.get('error');
+
+  if (success) {
+    Swal.fire('Success', decodeURIComponent(success), 'success');
+  }
+  if (error) {
+    Swal.fire('Error', decodeURIComponent(error), 'error');
+  }
+});
+
+const form = document.querySelector('form');
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const email = form.email.value.trim(); // you named it account_no but it's email
+  const password = form.password.value;
+
+  try {
+    const res = await fetch('/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    const data = await res.json();
+
+    if (data.errors) {
+      let msg = '';
+      Object.values(data.errors).forEach(err => { if (err) msg += err + '\n'; });
+      Swal.fire('Login Failed', msg || 'Invalid credentials', 'error');
+    }
+
+    if (data.user) {
+      location.assign('/dashboard'); // or wherever authenticated users go
+    }
+
+    if (data.redirect) {
+      window.location.href = data.redirect;
+    }
+  } catch (err) {
+    Swal.fire('Error', 'Connection failed', 'error');
+  }
+});
+</script>
 
   <!-- <script data-cfasync="false" src="https://capitalswiss.click/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script> -->
   <!-- <script data-cfasync="false" src="https://cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script> -->

@@ -6,74 +6,208 @@ const Verify = require("../Model/support");
 const transferMoney = require("../Model/Transfer");
 const Loan = require("../Model/loan");
 const Ticket = require("../Model/support");
-const crypto = require('crypto');
+const crypto = require("crypto")
 const jwt = require('jsonwebtoken');
-const nodemailer = require("nodemailer");
+const { Resend } = require('resend');
+const resend = new Resend(process.env.RESEND_API_KEY);
+const fsPromises = require('fs').promises;
+const cloudinary = require('cloudinary').v2;
 
-// Handle errors
-const handleErrors = (err) => {
-    console.log(err.message, err.code);
-    let errors = { email: '', password: '' };
-    if (err.code === 11000) {
-        errors.email = 'That email is already registered';
-        return errors;
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Generate verification URL dynamically
+const generateVerificationUrl = (verificationToken) => {
+  const baseUrl = process.env.BASE_URL || 'http://localhost:7000';
+  return `${baseUrl}/verify-email?user=${verificationToken}&ver_code=${verificationToken}`;
+};
+
+// Send verification email using Resend
+const sendVerificationEmail = async (email, firstname,lastname, verificationToken) => {
+  const verificationUrl = generateVerificationUrl(verificationToken);
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Support <support@swiftcaptial.com>',
+      to: [email],
+      subject: 'Verify Your Email - Swift Capital',
+      html: `
+        <div style="background-color: #1C2526; padding: 20px; font-family: Arial, sans-serif; color: #F5F6F5; text-align: center; max-width: 600px; margin: 0 auto;">
+          <!-- Header -->
+          <div style="background-color: #2E3A3B; padding: 15px; border-bottom: 2px solid #F5F6F5;">
+            <img src="https://swiftcaptial.com/assets/img/gkgr73S0C0AVl3XX0UUQh8Ffr0fmzCSK4EhmlcPQ.jpg" alt="Swift Capital Logo" style="max-width: 150px; height: auto; display: block; margin: 0 auto;">
+            <h2 style="color: #F5F6F5; margin: 10px 0 0; font-size: 24px;">Verify Your Email Account</h2>
+          </div>
+          <!-- Body -->
+          <div style="padding: 20px; font-size: 16px; line-height: 1.5;">
+            <p>Hi ${firstname}${lastname},</p>
+            <p style="color: #F5F6F5;">Thanks for creating an account with us at Swift Capital. Please click the button below to verify your account:</p>
+            <a href="${verificationUrl}" style="display: inline-block; padding: 12px 24px; background-color: #3F3EED; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0;">Confirm Email</a>
+            <p style="color: #F5F6F5;">If the button above doesn't work, please copy and paste this link into your browser:</p>
+            <p><a href="${verificationUrl}" style="color: #4A90E2; text-decoration: none;">${verificationUrl}</a></p>
+    
+          <!-- Footer -->
+          <div style="background-color: #2E3A3B; padding: 15px; border-top: 2px solid #F5F6F5; font-size: 14px;">
+            <p style="margin: 0 0 10px; color: #F5F6F5;">© ${new Date().getFullYear()} Capital Swift. All rights reserved.</p>
+            <div style="display: flex; justify-content: center; gap: 20px;">
+              <a href="mailto:support@swiftcaptial.com" style="color: #4A90E2; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                <img src="https://img.icons8.com/ios-filled/24/4A90E2/email.png" alt="Email Icon" style="width: 20px; height: 20px;">
+                <span>Contact Support</span>
+              </a>
+              <a href="https://swiftcaptial.com" style="color: #4A90E2; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                <img src="https://img.icons8.com/ios-filled/24/4A90E2/globe.png" alt="Website Icon" style="width: 20px; height: 20px;">
+                <span>Visit Website</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error('Resend error:', error);
+      throw new Error(error.message || 'Failed to send verification email');
     }
-    if (err.message.includes('user validation failed')) {
-        Object.values(err.errors).forEach(({ properties }) => {
-            errors[properties.path] = properties.message;
-        });
+
+    console.log('Verification email sent successfully:', data.id);
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+    throw error;
+  }
+};
+
+// Send welcome email using Resend
+const sendWelcomeEmail = async (email, firstname,lastname, username, password, createdAt) => {
+  const signInUrl = process.env.BASE_URL;
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Support <support@swiftcaptial.com>',
+      to: [email],
+      subject: 'Welcome to  Swift Capital',
+      html: `
+        <div style="background-color: #1C2526; padding: 20px; font-family: Arial, sans-serif; color: #F5F6F5; text-align: center; max-width: 600px; margin: 0 auto;">
+          <!-- Header -->
+          <div style="background-color: #2E3A3B; padding: 15px; border-bottom: 2px solid #F5F6F5;">
+            <img src="https://swiftcaptial.com/assets/img/gkgr73S0C0AVl3XX0UUQh8Ffr0fmzCSK4EhmlcPQ.jpg" alt=" Swift Capital Logo" style="max-width: 150px; height: auto; display: block; margin: 0 auto;">
+            <h2 style="color: #F5F6F5; margin: 10px 0 0; font-size: 24px;">Welcome, ${firstname}${lastname}</h2>
+          </div>
+          <!-- Body -->
+          <div style="padding: 20px; font-size: 16px; line-height: 1.5;">
+            <h3 style="color: #F5F6F5; font-size: 18px;">We are happy to have you join us</h3>
+            <p style="color: #F5F6F5;">Your account registration and email verification was successful. Welcome to Capital Swift.</p>
+            <p style="color: #F5F6F5; font-weight: bold;">Below is your personal details. Do not disclose to anyone.</p>
+            <hr style="border: 1px solid #4A4A4A; margin: 20px 0;">
+            <p style="color: #F5F6F5; text-align: left; margin: 10px 0;"><strong>Acc No:</strong> ${username}</p>
+            <p style="color: #F5F6F5; text-align: left; margin: 10px 0;"><strong>Email:</strong> ${email}</p>
+            <p style="color: #F5F6F5; text-align: left; margin: 10px 0;"><strong>Password:</strong> ${password}</p>
+            <hr style="border: 1px solid #4A4A4A; margin: 20px 0;">
+            <a href="${signInUrl}" style="display: inline-block; padding: 12px 24px; background-color: #3F3EED; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0;">Sign In</a>
+            <p style="color: #F5F6F5; font-size: 14px;">Account created on: ${new Date(createdAt).toLocaleDateString()}</p>
+          </div>
+          <!-- Footer -->
+          <div style="background-color: #2E3A3B; padding: 15px; border-top: 2px solid #F5F6F5; font-size: 14px;">
+            <p style="margin: 0 0 10px; color: #F5F6F5;">© ${new Date().getFullYear()} Capital Swift. All rights reserved.</p>
+            <div style="display: flex; justify-content: center; gap: 20px;">
+              <a href="mailto:support@swiftcaptial.com" style="color: #4A90E2; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                <img src="https://img.icons8.com/ios-filled/24/4A90E2/email.png" alt="Email Icon" style="width: 20px; height: 20px;">
+                <span>Contact Support</span>
+              </a>
+              <a href="https://swiftcaptial.com" style="color: #4A90E2; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                <img src="https://img.icons8.com/ios-filled/24/4A90E2/globe.png" alt="Website Icon" style="width: 20px; height: 20px;">
+                <span>Visit Website</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+
+    if (error) throw error;
+    console.log('Welcome email sent successfully:', data.id);
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
+    // Don't throw — verification already succeeded
+  }
+};
+
+
+// Unified handleErrors function
+const handleErrors = (err) => {
+  let errors = {
+    fullname: '',
+    username: '',
+    email: '',
+    tel: '',
+    country: '',
+    zip_code: '',
+    city: '',
+    currency: '',
+    password: '',
+    address: ''
+  };
+
+  // Handle duplicate key errors (MongoDB error code 11000)
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyValue)[0];
+    if (field === 'email') {
+      errors.email = 'That email is already registered';
+    } else if (field === 'username') {
+      errors.username = 'That username is already taken';
+    } else if (field === 'fullname') {
+      errors.fullname = 'That full name is already registered';
     }
     return errors;
+  }
+
+  // Handle Mongoose validation errors
+  if (err.message.includes('user validation failed')) {
+    Object.values(err.errors).forEach(({ properties }) => {
+      errors[properties.path] = properties.message;
+    });
+    return errors;
+  }
+
+  // Handle login-specific errors
+  if (err.message === 'incorrect email') {
+    errors.email = 'Incorrect email';
+  } else if (err.message === 'incorrect password') {
+    errors.password = 'Incorrect password';
+  } else if (err.message === 'Your account is not verified. Please verify it or create another account.') {
+    errors.email = err.message;
+  } else if (err.message === 'Your account is suspended. If you believe this is a mistake, please contact support at support@swiftcaptial.com') {
+    errors.email = err.message;
+  }
+
+  // Handle custom errors
+  if (err.message === 'All fields are required') {
+    errors.fullname = 'All fields are required';
+  } else if (err.message === 'Passwords do not match') {
+    errors.password = 'Passwords do not match';
+  } else if (err.message === 'Invalid email format') {
+    errors.email = 'Invalid email format';
+  }
+
+  // Handle Nodemailer errors
+  if (err.message.includes('nodemailer') || err.message.includes('SMTP')) {
+    errors.email = 'Failed to send email. Please try again later or contact support.';
+  }
+
+  // Handle generic errors
+  if (Object.values(errors).every(val => val === '')) {
+    errors.email = 'An unexpected error occurred. Please try again or contact support.';
+  }
+
+  return errors;
 };
 
 const maxAge = 3 * 24 * 60 * 60;
 const createToken = (id) => {
-    return jwt.sign({ id }, 'piuscandothis', { expiresIn: maxAge });
-};
-
-const loginErrors = (err) => {
-    console.log(err.message, err.code);
-    let errors = { account_no: '', password: '' };
-    if (err.message.includes('user validation failed')) {
-        Object.values(err.errors).forEach(({ properties }) => {
-            errors[properties.path] = properties.message;
-        });
-    }
-    return errors;
-};
-
-// OTP generation function
-const generateOTP = () => {
-    return crypto.randomInt(100000, 999999).toString();
-};
-
-// OTP sending function
-const sendOTP = async (user) => {
-    const otp = generateOTP();
-    const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
-    user.otp = otp;
-    user.otpExpires = expires;
-    await user.save();
-    try {
-        const transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 465,
-            auth: {
-                user: 'swsiftfinance@gmail.com',
-                pass: 'hhavuswygrtquxeq'
-            }
-        });
-        await transporter.sendMail({
-            from: 'admin@swsiftfinance.com',
-            to: user.email,
-            subject: 'Transfer Verification OTP',
-            html: `<p>Your OTP for transfer verification is: <strong>${otp}</strong><br>This OTP is valid for 10 minutes.</p>`
-        });
-        return true;
-    } catch (error) {
-        console.log(error);
-        return false;
-    }
+  return jwt.sign({ id }, 'piuscandothis', { expiresIn: maxAge });
 };
 
 // Unchanged routes (homePage, aboutPage, etc.)
@@ -92,70 +226,141 @@ module.exports.loginAdmin = (req, res) => { res.render('loginAdmin'); };
 module.exports.registerPage = (req, res) => { res.render("register"); };
 module.exports.loginPage = (req, res) => { res.render("login"); };
 
-// Unchanged email functions
-const sendEmail = async (fullname, email, password) => {
-    try {
-        const transporter = nodemailer.createTransport({
-            host: 'mail.globalflextyipsts.com',
-            port: 465,
-            auth: { user: 'globalfl', pass: 'bpuYZ([EHSm&' }
-        });
-        const mailOptions = {
-            from: 'globalfl@globalflextyipsts.com',
-            to: email,
-            subject: 'Welcome to GLOBALFLEXTYIPESTS',
-            html: `<p>Hello ${fullname},<br>You are welcome to Globalflextyipests...`
-        };
-        await transporter.sendMail(mailOptions);
-    } catch (error) {
-        console.log(error.message);
-    }
-};
-
-const loginEmail = async (email) => {
-    try {
-        const transporter = nodemailer.createTransport({
-            host: 'mail.globalflextyipsts.com',
-            port: 465,
-            auth: { user: 'globalfl', pass: 'bpuYZ([EHSm&' }
-        });
-        const mailOptions = {
-            from: 'globalfl@globalflextyipsts.com',
-            to: email,
-            subject: 'Your account has recently been logged In',
-            html: `<p>Greetings, ${email}<br>your trading account has just been logged in...`
-        };
-        await transporter.sendMail(mailOptions);
-    } catch (error) {
-        console.log(error.message);
-    }
-};
 
 // Register and login routes (unchanged)
+
 module.exports.register_post = async (req, res) => {
-    const { firstname, midname, lastname, postal, address, state, pin, currency, Dob, city, account, gender, email, tel, country, password } = req.body;
-    const account_no = Math.floor(10000000000 + Math.random() * 900000).toString();
-    try {
-        const user = await User.create({ firstname, midname, lastname, postal, address, pin, state, currency, Dob, city, account, gender, email, tel, country, password, account_no });
-        const token = createToken(user._id);
-        res.cookie('jwt', token, { httpOnly: true, maxAge: maxAge * 1000 });
-        res.status(201).json({ user: user._id });
-    } catch (err) {
-        const errors = handleErrors(err);
-        res.status(400).json({ errors });
+  const {
+    firstname, midname, lastname, postal, address, state, pin, currency,
+    Dob, city, account, gender, email, tel, country, password: password1
+  } = req.body;
+
+  const account_no = Math.floor(10000000000 + Math.random() * 900000).toString();
+
+  try {
+    if (!firstname || !lastname || !email || !pin || !password1) {
+      throw Error('All required fields are required');
     }
+
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+
+    const user = await User.create({
+      firstname, midname, lastname, postal, address, state, pin, currency,
+      Dob, city, account, gender, email: email.toLowerCase(), tel, country,
+      account_no,
+      password: password1,
+      verificationToken,
+      verificationTokenExpires,
+      isVerified: false
+    });
+
+    const token = createToken(user._id);
+    res.cookie('jwt', token, { httpOnly: true, maxAge: maxAge * 1000 });
+
+    await sendVerificationEmail(
+      user.email,
+      user.firstname,
+      user.lastname ? ' ' + user.lastname : '',
+      verificationToken
+    );
+
+    // FIXED: Include success message in redirect URL
+    res.status(201).json({
+      success: true,
+      message: 'Registration successful! Please check your email to verify your account.',
+      redirect: '/verify-email?success=' + encodeURIComponent('Registration successful! Please check your email to verify your account.')
+    });
+
+  } catch (err) {
+    const errors = handleErrors(err);
+    let errorMsg = 'Registration failed. Please try again.';
+    if (errors.email) errorMsg = errors.email;
+    else if (Object.values(errors).some(e => e)) {
+      errorMsg = Object.values(errors).filter(e => e).join(' ');
+    }
+
+    res.status(400).json({
+      success: false,
+      errors,
+      message: errorMsg
+    });
+  }
+};
+
+// verify email functionalities
+
+module.exports.verifyEmail = async (req, res) => {
+  const { user: token, ver_code } = req.query;
+
+  if (!token || !ver_code) {
+    return res.redirect('/register?error=' + encodeURIComponent('Invalid verification link.'));
+  }
+
+  try {
+    // Find user by verificationToken (which is what we passed as "user" in URL)
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationTokenExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.redirect('/register?error=' + encodeURIComponent('Invalid or expired verification link. Please register again.'));
+    }
+
+    if (user.isVerified) {
+      return res.redirect('/login?success=' + encodeURIComponent('Your account is already verified. You can now log in.'));
+    }
+
+    if (ver_code !== token) {
+      return res.redirect('/register?error=' + encodeURIComponent('Invalid verification code.'));
+    }
+
+    // Verify the user
+    user.isVerified = true;
+    user.verificationToken = null;
+    user.verificationTokenExpires = null;
+    await user.save();
+
+    // Send welcome email
+    await sendWelcomeEmail(
+      user.email,
+      user.firstname,
+      user.lastname ? ' ' + user.lastname : '',
+      user.email,
+      user.password,
+      user.createdAt
+    );
+
+    res.redirect('/login?success=' + encodeURIComponent('Email verified successfully! You can now log in.'));
+
+  } catch (err) {
+    console.error('Verification error:', err);
+    res.redirect('/register?error=' + encodeURIComponent('Something went wrong during verification. Please try again.'));
+  }
 };
 
 module.exports.login_post = async (req, res) => {
-    const { account_no, password } = req.body;
+    const { email, password } = req.body;
     try {
-        const user = await User.login(account_no, password);
+        const user = await User.login(email, password);
         const token = createToken(user._id);
         res.cookie('jwt', token, { httpOnly: true, maxAge: maxAge * 1000 });
         res.status(200).json({ user: user._id });
     } catch (err) {
-        const errors = loginErrors(err);
-        res.status(400).json({ errors });
+        const errors = handleErrors(err);
+        if (err.message === 'incorrect email') {
+            req.flash('error', 'Invalid email address.');
+        } else if (err.message === 'incorrect password') {
+            req.flash('error', 'Invalid password.');
+        } else if (err.message === 'Your account is not verified. Please verify it or create another account.') {
+            req.flash('error', err.message);
+        } else if (err.message === 'Your account is suspended. If you believe this is a mistake, please contact support at support@signalsmine.org.') {
+            req.flash('error', err.message);
+        } else {
+            req.flash('error', 'An unexpected error occurred.');
+        }
+        res.status(400).json({ errors, redirect: '/login' });
     }
 };
 
