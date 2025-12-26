@@ -9,6 +9,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Swift and Secure Money Transfer to any UK bank account will become a breeze with PIXEL VERSE BANK." />
   <meta name="csrf_token" content="QfZeg2Tb7pQvwUg6AJO4IpDW0DTYJ0sCoPPtd6O8" id="csrf_token" data-turbolinks-permanent>
+   <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link rel="shortcut icon" href="/storage/app/public/photos/vfrIHvABt6idQp5IfHdDn5z1qz6Ul3GBMRL2x0tE.jpg" />
   <link rel="stylesheet" href="/dash2/libs/%40fortawesome/fontawesome-pro/css/all.min.css">
   <link href="/dash2/konanauth/public/asset/fonts/fontawesome/css/all.css" rel="stylesheet" type="text/css">
@@ -188,19 +190,7 @@
           <div class="w-lg-500px w-100 p-10 p-lg-15 mx-auto">
             <div></div>
             <div>
-             <% if (success_msg && success_msg.length > 0) { %>
-  <div class="col-8 alert alert-success alert-dismissible fade show" role="alert">
-    <%= success_msg %>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
-<% } %>
-
-<% if (error_msg && error_msg.length > 0) { %>
-  <div class="col-8 alert alert-danger alert-dismissible fade show" role="alert">
-    <%= error_msg %>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
-<% } %>
+       
               <form class="form w-100" action="/verify-otp/<%=user._id%>" method="post">
                 <h3 class="text-dark mb-3">Verify OTP</h3>
                 <p>Check for an OTP sent to your registered email address or message an admin for CTO code.</p>
@@ -263,3 +253,34 @@
     };
   })();
 </script>
+
+<!-- SweetAlert2 Flash Messages -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const messages = <%- JSON.stringify(messages || {}) %>;
+
+      if (messages.success && messages.success.length > 0) {
+        messages.success.forEach(msg => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: msg,
+            timer: 5000,
+            timerProgressBar: true,
+            showConfirmButton: false
+          });
+        });
+      }
+
+      if (messages.error && messages.error.length > 0) {
+        messages.error.forEach(msg => {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: msg,
+            confirmButtonColor: '#d33'
+          });
+        });
+      }
+    });
+  </script>

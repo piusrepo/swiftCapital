@@ -9,6 +9,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Swift and Secure Money Transfer to any UK bank account will become a breeze with PIXEL VERSE BANK." />
   <meta name="csrf_token" content="QfZeg2Tb7pQvwUg6AJO4IpDW0DTYJ0sCoPPtd6O8" id="csrf_token" data-turbolinks-permanent>
+    <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <link rel="shortcut icon" href="storage/app/public/photos/vfrIHvABt6idQp5IfHdDn5z1qz6Ul3GBMRL2x0tE.jpg" />
   <link rel="stylesheet" href="dash2/libs/%40fortawesome/fontawesome-pro/css/all.min.css">
   <link href="dash2/konanauth/public/asset/fonts/fontawesome/css/all.css" rel="stylesheet" type="text/css">
@@ -216,6 +219,25 @@ pre,code,kbd,samp
         <div>
             <p>Funds will reflect in the Beneficiary Account within 72hours.</p>
         </div>
+          <!-- NEW: Transfer From Selection -->
+              <div class="fv-row mb-6 form-floating">
+                <select class="form-control form-control-lg form-control-solid fs-2" name="transferFrom" id="transferFrom" required>
+                  <option value="usd" selected>USD Balance (<%= user.currency %><%= user.balance.toFixed(2) %>)</option>
+                  <option value="btc">BTC Balance (<%= (user.btcBalance || 0).toFixed(8) %> BTC)</option>
+                </select>
+                <label class="form-label fs-6 fw-bolder text-dark">Transfer From</label>
+              </div>
+
+               <!-- Display Selected Balance -->
+              <div class="fv-row mb-6">
+                <div class="alert alert-info">
+                  <strong>Available Balance:</strong> 
+                  <span id="availableBalance">
+                    <%= user.currency %><%= user.balance.toFixed(2) %>
+                  </span>
+                </div>
+              </div>
+
         <div class="fv-row mb-6">
             <div class="input-group mb-3">
                 <span class="input-group-text border-0 fs-2"><%=user.currency%></span>
@@ -223,6 +245,7 @@ pre,code,kbd,samp
                                 <span class="input-group-text border-0"><i class="fal fa-money" aria-hidden="true"></i></span>
             </div>
                     </div>
+                    
                     <div class="fv-row mb-5 form-floating">
                         <input class="form-control form-control-lg form-control-solid fs-2 " id="accName" type="text" name="accName" autocomplete="accName"  required />
                         <label class="form-label fs-6 fw-bolder text-dark" for="accName">Beneficiary Account Name</label>
@@ -577,3 +600,55 @@ function googleTranslateElementInit() {
     };
   })();
 </script>
+
+ <!-- Update Available Balance Display -->
+  <script>
+    const transferFrom = document.getElementById('transferFrom');
+    const availableBalance = document.getElementById('availableBalance');
+
+    const usdBalance = '<%= user.currency %><%= user.balance.toFixed(2) %>';
+    const btcBalance = '<%= (user.btcBalance || 0).toFixed(8) %> BTC';
+
+    transferFrom.addEventListener('change', function() {
+      if (this.value === 'usd') {
+        availableBalance.textContent = usdBalance;
+      } else {
+        availableBalance.textContent = btcBalance;
+      }
+    });
+  </script>
+
+
+
+<!-- SweetAlert2 Flash Messages -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const messages = <%- JSON.stringify(messages || {}) %>;
+
+      if (messages.success && messages.success.length > 0) {
+        messages.success.forEach(msg => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: msg,
+            timer: 5000,
+            timerProgressBar: true,
+            showConfirmButton: false
+          }).then(() => {
+            window.location.href = '/dashboard'; // Redirect after success
+          });
+        });
+      }
+
+      if (messages.error && messages.error.length > 0) {
+        messages.error.forEach(msg => {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: msg,
+            confirmButtonColor: '#d33'
+          });
+        });
+      }
+    });
+  </script>

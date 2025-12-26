@@ -368,6 +368,72 @@ module.exports.login_post = async (req, res) => {
     }
 };
 
+
+
+// OTP CODES
+
+// OTP generation function
+const generateOTP = () => {
+    return crypto.randomInt(100000, 999999).toString();
+};
+
+// OTP sending function using Resend
+const sendOTP = async (user) => {
+    const otp = generateOTP(); // assuming you have this function defined
+    const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.otp = otp;
+    user.otpExpires = expires;
+    await user.save();
+
+    try {
+        const { data, error } = await resend.emails.send({
+            from: 'Capital Swift Bank <support@swiftcaptial.com>', // Use your verified sender
+            to: [user.email],
+            subject: 'Transfer Verification OTP',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #f9f9f9;">
+                    <div style="text-align: center; padding: 10px 0;">
+                        <h2 style="color: #1a1a1a;">Capital Swift Bank</h2>
+                    </div>
+                    <div style="padding: 20px; background-color: #ffffff; border-radius: 8px; text-align: center;">
+                        <h3 style="color: #333;">Transfer Verification Required</h3>
+                        <p style="font-size: 16px; color: #555;">
+                            Your One-Time Password (OTP) for the transfer is:
+                        </p>
+                        <div style="font-size: 32px; font-weight: bold; color: #0d6efd; letter-spacing: 8px; margin: 20px 0;">
+                            ${otp}
+                        </div>
+                        <p style="font-size: 14px; color: #888;">
+                            This OTP is valid for <strong>10 minutes</strong>. Do not share it with anyone.
+                        </p>
+                        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+                        <p style="font-size: 12px; color: #aaa;">
+                            If you didn't initiate this transfer, please contact support immediately.
+                        </p>
+                    </div>
+                    <div style="text-align: center; padding: 15px; font-size: 12px; color: #999;">
+                        © ${new Date().getFullYear()} Capital Swift Bank. All rights reserved.<br>
+                        <a href="mailto:support@swiftcaptial.com" style="color: #0d6efd; text-decoration: none;">support@swiftcaptial.com</a>
+                    </div>
+                </div>
+            `,
+        });
+
+        if (error) {
+            console.error('Resend OTP email error:', error);
+            return false;
+        }
+
+        console.log('OTP email sent successfully via Resend:', data.id);
+        return true;
+
+    } catch (error) {
+        console.error('Error sending OTP via Resend:', error);
+        return false;
+    }
+};
+
 // Updated localtransferPage_post
 module.exports.localtransferPage_post = async (req, res) => {
     try {
@@ -427,41 +493,38 @@ module.exports.internationaltransferPage = async (req, res) => {
     res.render("internationaltransfer", { infoErrorsObj, infoSubmitObj });
 };
 
-// Updated internationaltransferPage_post
+
 module.exports.internationaltransferPage_post = async (req, res) => {
     try {
-        const { id } = req.params;
+          const { id } = req.params;
         const user = await User.findById(id);
+        const { amount, transferFrom } = req.body;
 
-        if (user.balance === 0) {
-            req.flash('infoErrors', 'Insufficient funds, kindly fund your account');
-            return res.redirect("/internationaltransfer");
-        }
-
-        // Validate sufficient balance
-        const transferAmount = parseFloat(req.body.amount);
+        const transferAmount = parseFloat(amount);
         if (isNaN(transferAmount) || transferAmount <= 0) {
-            req.flash("infoErrors", "Invalid transfer amount.");
+            req.flash('error', 'Invalid transfer amount.');
             return res.redirect("/internationaltransfer");
         }
 
-        if (user.balance < transferAmount) {
-            req.flash("infoErrors", "Insufficient balance for this transfer.");
+        let selectedBalance = transferFrom === 'btc' ? (user.btcBalance || 0) : user.balance;
+
+        if (transferAmount > selectedBalance) {
+            req.flash('error', `Insufficient ${transferFrom === 'btc' ? 'BTC' : 'USD'} balance.`);
             return res.redirect("/internationaltransfer");
         }
 
-        // Store transfer data in session
-        req.session.transferData = req.body;
+        // Store in session
+        req.session.transferData = { ...req.body, transferFrom };
         req.session.transferType = 'international';
 
         // Check if OTP is suspended
         if (user.otpSuspended) {
-            req.flash("infoErrors", "OTP verification is suspended. Please contact admin for CTO code.");
+            req.flash("error", "OTP verification is suspended. Please contact admin for CTO code.");
         } else {
             // Generate and send OTP
             const otpSent = await sendOTP(user);
             if (!otpSent) {
-                req.flash("infoErrors", "Failed to send OTP. Please try again.");
+                req.flash("error", "Failed to send OTP. Please try again.");
                 return res.redirect("/internationaltransfer");
             }
         }
@@ -470,16 +533,15 @@ module.exports.internationaltransferPage_post = async (req, res) => {
         return res.render('otp-verification', {
             user,
             transferType: 'international',
-            infoErrorsObj: req.flash("infoErrors"),
-            infoSubmitObj: req.flash("infoSubmit")
+            messages: req.flash()
         });
     } catch (error) {
-        req.flash("infoErrors", error.message);
+       req.flash('error', error.message || 'Transfer failed');
         res.redirect("/internationaltransfer");
     }
 };
 
-// Updated verifyOTP
+
 module.exports.verifyOTP = async (req, res) => {
     try {
         const { id } = req.params;
@@ -489,54 +551,58 @@ module.exports.verifyOTP = async (req, res) => {
         const transferType = req.session.transferType;
 
         if (!transferData || !transferType) {
-            req.flash("infoErrors", "Transfer session expired. Please try again.");
-            return res.redirect(`/${transferType}transfer`);
+            req.flash("error", "Transfer session expired. Please try again.");
+            return res.redirect(`/${transferType || 'local'}transfer`);
         }
 
-        // If OTP is suspended and no OTP exists, show message and stay on OTP page
+        const { transferFrom = 'usd' } = transferData;
+
+        // OTP suspended
         if (user.otpSuspended && (!user.otp || !user.otpExpires)) {
-            req.flash("infoErrors", "OTP verification is suspended. Please contact admin for CTO code.");
-            return res.render("otp-verification", { user, transferType });
+            req.flash("error", "OTP verification is suspended. Please contact admin for CTO code.");
+            return res.render("otp-verification", { user, transferType, messages: req.flash() });
         }
 
-        // Check if OTP exists and is not expired
+        // No OTP
         if (!user.otp || !user.otpExpires) {
-            req.flash("infoErrors", "No OTP found. Please request a new one.");
-            return res.render("otp-verification", { user, transferType });
+            req.flash("error", "No OTP found. Please request a new one.");
+            return res.render("otp-verification", { user, transferType, messages: req.flash() });
         }
 
+        // Expired OTP
         if (new Date() > user.otpExpires) {
-            req.flash("infoErrors", "OTP has expired. Please request a new one.");
+            req.flash("error", "OTP has expired. Please request a new one.");
             user.otp = null;
             user.otpExpires = null;
             await user.save();
-            return res.render("otp-verification", { user, transferType });
+            return res.render("otp-verification", { user, transferType, messages: req.flash() });
         }
 
-        // Validate OTP
+        // Wrong OTP
         if (user.otp !== otp) {
-            req.flash("infoErrors", "Invalid OTP. Please try again.");
-            return res.render("otp-verification", { user, transferType });
+            req.flash("error", "Invalid OTP. Please try again.");
+            return res.render("otp-verification", { user, transferType, messages: req.flash() });
         }
 
-        // Validate sufficient balance
+        // Balance validation
         const transferAmount = parseFloat(transferData.amount);
         if (isNaN(transferAmount) || transferAmount <= 0) {
-            req.flash("infoErrors", "Invalid transfer amount.");
+            req.flash("error", "Invalid transfer amount.");
             return res.redirect(`/${transferType}transfer`);
         }
 
-        if (user.balance < transferAmount) {
-            req.flash("infoErrors", "Insufficient balance for this transfer.");
+        const selectedBalance = transferFrom === 'btc' ? (user.btcBalance || 0) : user.balance;
+        if (transferAmount > selectedBalance) {
+            req.flash("error", `Insufficient ${transferFrom === 'btc' ? 'BTC' : 'USD'} balance.`);
             return res.redirect(`/${transferType}transfer`);
         }
 
-        // OTP is valid, process the transfer
+        // === SUCCESS: Process Transfer ===
         const transMonie = new transferMoney({
             Bank: transferData.Bank,
             amount: transferAmount,
-            Bamount: user.balance.toFixed(2),
-            Afamount: (user.balance - transferAmount).toFixed(2),
+            Bamount: selectedBalance.toFixed(transferFrom === 'btc' ? 8 : 2),
+            Afamount: (selectedBalance - transferAmount).toFixed(transferFrom === 'btc' ? 8 : 2),
             bank_iban: transferData.bank_iban,
             bank_Address: transferData.bank_Address,
             accNo: transferData.accNo,
@@ -546,25 +612,37 @@ module.exports.verifyOTP = async (req, res) => {
             swiftCode: transferData.swiftCode,
             country: transferData.country,
             note: transferData.note,
-            status: transferData.status,
+            status: 'pending',
             owner: user._id,
+            transferFrom: transferFrom
         });
 
         await transMonie.save();
         user.transfers.push(transMonie);
-        user.balance -= transferAmount;
+
+        // Deduct balance
+        if (transferFrom === 'btc') {
+            user.btcBalance -= transferAmount;
+        } else {
+            user.balance -= transferAmount;
+        }
+
         user.otp = null;
         user.otpExpires = null;
         await user.save();
 
+        // Clear session
         req.session.transferData = null;
         req.session.transferType = null;
 
-        req.flash("infoSubmit", "Wire transfer successful waiting for approval.");
-        res.render("transfer-History", { user });
+        // Flash success and REDIRECT (important!)
+        req.flash("success", "Wire transfer successful — waiting for approval.");
+        return res.redirect("/transferHistory/" + user._id); // or wherever your history route is
+
     } catch (error) {
-        req.flash("infoErrors", error.message);
-        res.redirect(`/${req.session.transferType}transfer`);
+        console.error('verifyOTP error:', error);
+        req.flash("error", error.message || "Transfer failed. Please try again.");
+        return res.redirect(`/${req.session.transferType || 'local'}transfer`);
     }
 };
 
