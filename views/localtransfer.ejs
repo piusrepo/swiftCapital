@@ -190,19 +190,26 @@ pre,code,kbd,samp
             <div>
     </div>                        <div >
         
-          <% if (success_msg && success_msg.length > 0) { %>
-  <div class="col-8 alert alert-success alert-dismissible fade show" role="alert">
-    <%= success_msg %>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
-<% } %>
+       <!-- Flash Messages -->
+<div class="col-lg-12 col-md-12 mb-5">
+  <% if (messages && messages.success && messages.success.length > 0) { %>
+    <% messages.success.forEach(msg => { %>
+      <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <%= msg %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% }) %>
+  <% } %>
 
-<% if (error_msg && error_msg.length > 0) { %>
-  <div class="col-8 alert alert-danger alert-dismissible fade show" role="alert">
-    <%= error_msg %>
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
-<% } %>
+  <% if (messages && messages.error && messages.error.length > 0) { %>
+    <% messages.error.forEach(msg => { %>
+      <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <%= msg %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    <% }) %>
+  <% } %>
+</div>
     
     <form class="form w-100" action="/localtransfer/<%=user._id%>"  method="post">  
                <h3 class="text-dark mb-3">Local Transfer</h3>

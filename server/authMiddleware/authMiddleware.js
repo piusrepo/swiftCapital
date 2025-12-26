@@ -46,19 +46,5 @@ const checkUser = (req, res, next) => {
   };
 
 
-  //admin acceess
- const isAdmin = async (req, res, next) => {
-  let errors = [];
-  try {
-    const user = await User.findById(req.user._id);
-    if (user.role !== 1) {
-      errors.push({msg: "Unauthourized access"})
-    } else {
-      next();
-    }
-  } catch (error) {
-   console.log(error);
-  }
-};
 
-module.exports = {requireAuth,checkUser, isAdmin };
+module.exports = {requireAuth,checkUser };

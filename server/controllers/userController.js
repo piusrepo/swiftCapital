@@ -572,6 +572,73 @@ module.exports.verifyOTP = async (req, res) => {
 module.exports.dashboardPage = async (req, res) => {
     res.render('dashboard');
 };
+// module.exports.dashboardPage = async (req, res) => {
+//     const user = await User.findById(req.params.id); // assuming you have auth middleware that sets req.user
+//     // or however you get the logged-in user
+//     res.render('dashboard', { user });
+// };
+
+
+
+// start swap codes functionalities
+
+// GET Swap Page
+exports.swapPage = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) {
+      req.flash('error', 'Unauthorized');
+      return res.redirect('/dashboard');
+    }
+    res.render('swap', { user, messages: req.flash() });
+  } catch (err) {
+    req.flash('error', 'Error loading page');
+    res.redirect('/dashboard');
+  }
+};
+
+// POST Swap
+exports.swap_post = async (req, res) => {
+  try {
+    const { amount } = req.body;
+    const usdAmount = parseFloat(amount);
+
+    if (isNaN(usdAmount) || usdAmount < 50) {
+      req.flash('error', 'Minimum swap amount is $50');
+      return res.redirect(`/swap/${req.params.id}`);
+    }
+
+    const user = await User.findById(req.params.id);
+    if (usdAmount > user.balance) {
+      req.flash('error', 'Insufficient balance');
+      return res.redirect(`/swap/${req.params.id}`);
+    }
+
+    // Fetch real-time BTC price (free API)
+    const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+    const data = await response.json();
+    const btcPrice = data.bitcoin.usd;
+
+    const btcAmount = usdAmount / btcPrice;
+
+    // Update balances
+    user.balance -= usdAmount;
+    user.btcBalance += btcAmount;
+    await user.save();
+
+    // For recent transactions: since you have no separate transaction model yet,
+    // we'll just flash a success message (you can expand later)
+    req.flash('success', `Swapped $${usdAmount.toFixed(2)} to ${btcAmount.toFixed(8)} BTC`);
+
+    res.redirect('/dashboard');
+  } catch (err) {
+    req.flash('error', 'Swap failed');
+    res.redirect(`/swap/${req.params.id}`);
+  }
+};
+
+// end swap codes functionalities
+
 
 module.exports.bitPayPage = async (req, res) => {
     const infoErrorsObj = req.flash('infoErrors');
@@ -709,23 +776,63 @@ module.exports.verifyPage = async (req, res) => {
     res.render("verify-account", { infoErrorsObj, infoSubmitObj });
 };
 
+// module.exports.verifyPage_post = async (req, res) => {
+//     let theImage;
+//     let uploadPath;
+//     let newImageName;
+//     if (!req.files || Object.keys(req.files).length === 0) {
+//         console.log('no files to upload');
+//     } else {
+//         theImage = req.files.image;
+//         newImageName = theImage.name;
+//         uploadPath = require('path').resolve('./') + '/public/IMG_UPLOADS/' + newImageName;
+//         theImage.mv(uploadPath, function (err) {
+//             if (err) {
+//                 console.log(err);
+//             }
+//         });
+//     }
+//     try {
+//         const verification = await Verify.create({
+//             fullname: req.body.fullname,
+//             tel: req.body.tel,
+//             email: req.body.email,
+//             state: req.body.state,
+//             city: req.body.city,
+//             dateofBirth: req.body.dateofBirth,
+//             address: req.body.address,
+//             image: newImageName
+//         });
+//         await verification.save();
+//         const id = req.params.id;
+//         const user = await User.findById(id);
+//         user.verified.push(verification);
+//         await user.save();
+//         req.flash('infoSubmit', 'verification successful awaiting approval');
+//         res.redirect("/verify-account");
+//     } catch (error) {
+//         console.log(error);
+//     }
+// };
+
+
+// === KYC VERIFICATION UPLOAD ===
 module.exports.verifyPage_post = async (req, res) => {
-    let theImage;
-    let uploadPath;
-    let newImageName;
-    if (!req.files || Object.keys(req.files).length === 0) {
-        console.log('no files to upload');
-    } else {
-        theImage = req.files.image;
-        newImageName = theImage.name;
-        uploadPath = require('path').resolve('./') + '/public/IMG_UPLOADS/' + newImageName;
-        theImage.mv(uploadPath, function (err) {
-            if (err) {
-                console.log(err);
-            }
-        });
-    }
     try {
+        if (!req.files || Object.keys(req.files).length === 0) {
+            req.flash('infoErrors', 'Please upload your ID document');
+            return res.redirect("/verify-account");
+        }
+
+        const theImage = req.files.image;
+
+        // Upload to Cloudinary
+        const result = await cloudinary.uploader.upload(theImage.tempFilePath || theImage.path, {
+            folder: 'swiftcapital/kyc',
+            public_id: `kyc_${req.params.id}_${Date.now()}`,
+            resource_type: 'image'
+        });
+
         const verification = await Verify.create({
             fullname: req.body.fullname,
             tel: req.body.tel,
@@ -734,19 +841,23 @@ module.exports.verifyPage_post = async (req, res) => {
             city: req.body.city,
             dateofBirth: req.body.dateofBirth,
             address: req.body.address,
-            image: newImageName
+            image: result.secure_url  // Save Cloudinary URL
         });
+
         await verification.save();
-        const id = req.params.id;
-        const user = await User.findById(id);
+        const user = await User.findById(req.params.id);
         user.verified.push(verification);
         await user.save();
-        req.flash('infoSubmit', 'verification successful awaiting approval');
+
+        req.flash('infoSubmit', 'Verification submitted successfully, awaiting approval');
         res.redirect("/verify-account");
     } catch (error) {
-        console.log(error);
+        console.error('KYC upload error:', error);
+        req.flash('infoErrors', 'Failed to submit verification. Please try again.');
+        res.redirect("/verify-account");
     }
 };
+
 
 module.exports.supportPage = async (req, res) => {
     const infoErrorsObj = req.flash('infoErrors');
@@ -780,69 +891,139 @@ module.exports.accountPage = async (req, res) => {
     res.render('account-settings');
 };
 
+// module.exports.accountPage_post = async (req, res) => {
+//     let theImage;
+//     let uploadPath;
+//     let newImageName;
+//     if (!req.files || Object.keys(req.files).length === 0) {
+//         console.log('no files to upload');
+//     } else {
+//         theImage = req.files.image;
+//         newImageName = theImage.name;
+//         uploadPath = require('path').resolve('./') + '/public/IMG_UPLOADS/' + newImageName;
+//         theImage.mv(uploadPath, function (err) {
+//             if (err) {
+//                 console.log(err);
+//             }
+//         });
+//     }
+//     try {
+//         await User.findByIdAndUpdate(req.params.id, {
+//             image: newImageName,
+//             updatedAt: Date.now()
+//         });
+//         req.flash('infoSubmit', 'profile updated successfully');
+//         await res.redirect("/dashboard");
+//         console.log("redirected");
+//     } catch (error) {
+//         req.flash('infoErrors', error);
+//     }
+// };
+
+// module.exports.depositPage_post = async (req, res) => {
+//     let theImage;
+//     let uploadPath;
+//     let newImageName;
+//     if (!req.files || Object.keys(req.files).length === 0) {
+//         console.log('no files to upload');
+//     } else {
+//         theImage = req.files.image;
+//         newImageName = theImage.name;
+//         uploadPath = require('path').resolve('./') + '/public/IMG_UPLOADS/' + newImageName;
+//         theImage.mv(uploadPath, function (err) {
+//             if (err) {
+//                 console.log(err);
+//             }
+//         });
+//     }
+//     try {
+//         const deposit = new Deposit({
+//             type: req.body.type,
+//             amount: req.body.amount,
+//             status: req.body.status,
+//             image: newImageName
+//         });
+//         await deposit.save();
+//         const id = req.params.id;
+//         const user = await User.findById(id);
+//         user.deposits.push(deposit);
+//         await user.save();
+//         req.flash('infoSubmit', 'deposit successful undergoing approval');
+//         await res.render("accounthistory", { user });
+//     } catch (error) {
+//         console.log(error);
+//     }
+// };
+
+
+// === DEPOSIT PROOF UPLOAD ===
+
+
+// === PROFILE PICTURE UPLOAD (account-settings) ===
+
 module.exports.accountPage_post = async (req, res) => {
-    let theImage;
-    let uploadPath;
-    let newImageName;
-    if (!req.files || Object.keys(req.files).length === 0) {
-        console.log('no files to upload');
-    } else {
-        theImage = req.files.image;
-        newImageName = theImage.name;
-        uploadPath = require('path').resolve('./') + '/public/IMG_UPLOADS/' + newImageName;
-        theImage.mv(uploadPath, function (err) {
-            if (err) {
-                console.log(err);
-            }
-        });
-    }
     try {
+        if (!req.file) {
+            req.flash('infoErrors', 'Please select an image to upload');
+            return res.redirect("/account-settings");
+        }
+
+        // req.file.path = Cloudinary secure_url
         await User.findByIdAndUpdate(req.params.id, {
-            image: newImageName,
+            image: req.file.path,
             updatedAt: Date.now()
         });
-        req.flash('infoSubmit', 'profile updated successfully');
-        await res.redirect("/dashboard");
-        console.log("redirected");
+
+        req.flash('infoSubmit', 'Profile picture updated successfully!');
+        res.redirect("/dashboard");
     } catch (error) {
-        req.flash('infoErrors', error);
+        console.error('Profile upload error:', error);
+        req.flash('infoErrors', 'Failed to upload image. Please try again.');
+        res.redirect("/account-settings");
     }
 };
 
+
+
+
+
 module.exports.depositPage_post = async (req, res) => {
-    let theImage;
-    let uploadPath;
-    let newImageName;
-    if (!req.files || Object.keys(req.files).length === 0) {
-        console.log('no files to upload');
-    } else {
-        theImage = req.files.image;
-        newImageName = theImage.name;
-        uploadPath = require('path').resolve('./') + '/public/IMG_UPLOADS/' + newImageName;
-        theImage.mv(uploadPath, function (err) {
-            if (err) {
-                console.log(err);
-            }
-        });
-    }
     try {
+        if (!req.files || Object.keys(req.files).length === 0) {
+            req.flash('infoErrors', 'Please upload proof of payment');
+            return res.redirect("/deposits");
+        }
+
+        const theImage = req.files.image;
+
+        // Upload to Cloudinary
+        const result = await cloudinary.uploader.upload(theImage.tempFilePath || theImage.path, {
+            folder: 'swiftcapital/deposits',
+            public_id: `deposit_${Date.now()}`,
+            resource_type: 'image'
+        });
+
         const deposit = new Deposit({
             type: req.body.type,
             amount: req.body.amount,
             status: req.body.status,
-            image: newImageName
+            image: result.secure_url  // Save Cloudinary URL
         });
+
         await deposit.save();
-        const id = req.params.id;
-        const user = await User.findById(id);
+        const user = await User.findById(req.params.id);
         user.deposits.push(deposit);
         await user.save();
-        req.flash('infoSubmit', 'deposit successful undergoing approval');
-        await res.render("accounthistory", { user });
+
+        req.flash('infoSubmit', 'Deposit submitted successfully, awaiting approval');
+        res.render("accounthistory", { user });
     } catch (error) {
-        console.log(error);
+        console.error('Deposit upload error:', error);
+        req.flash('infoErrors', 'Failed to process deposit. Please try again.');
+        res.redirect("/deposits");
     }
 };
+
 
 module.exports.cardPage = async (req, res) => {
     res.render("card");

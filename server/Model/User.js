@@ -72,6 +72,10 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  btcBalance: {
+  type: Number,
+  default: 0
+},
   total_deposit: {
     type: String,
     default: "0.00"

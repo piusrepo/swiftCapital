@@ -1,27 +1,26 @@
 const express = require('express');
-// const multer = require('multer');
 const router = express.Router();
-
 const userController = require('../controllers/userController');
+const multer = require('multer');
+const path = require('path');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'swiftcapital/profiles',
+    allowed_formats: ['jpg', 'jpeg', 'png'],
+    public_id: (req, file) => `user_${req.params.id}_${Date.now()}`
+  }
+});
 
-// image upload
-// var storage = multer.diskStorage({
-//     destination: function(req, res, cb){
-//         cb(null, './uploads');
-//     },
-//     filename: function(req, file,cb){
-//         cb(null, file.fieldname+"_"+Date.now()+"_"+file.originalname);
-//     }
-// })
-
-// var upload = multer({
-//     storage: storage,
-// }).single("image");
-
-
+const upload = multer({ storage });
 
 router.get('/dashboard',userController.dashboardPage);
+
+router.get('/swap/:id', userController.swapPage);
+router.post('/swap/:id', userController.swap_post);
 
 router.get('/accounthistory/:id',userController.accounHistoryPage);
 
@@ -30,7 +29,7 @@ router.get('/localtransfer',userController.localtransferPage);
 router.post('/localtransfer/:id',userController.localtransferPage_post);
 
 router.get('/account-settings',userController.accountPage);
-router.post('/account-settings/:id',userController.accountPage_post);
+router.post('/account-settings/:id', upload.single('image'), userController.accountPage_post);
 
 
 

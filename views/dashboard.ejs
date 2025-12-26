@@ -1020,7 +1020,7 @@ window.smartsupp||(function(d) {
               <div class="d-flex align-items-center ms-2 ms-lg-3" id="kt_header_user_menu_toggle">
                 <!--begin::Menu wrapper-->
                 <div class="cursor-pointer symbol symbol-50px symbol-circle" data-kt-menu-trigger="{default: 'click'}" data-kt-menu-attach="parent" data-kt-menu-placement="bottom-end">
-                  <div class="symbol-label fs-2 fw-bolder text-dark"> <img alt="" src="/IMG_UPLOADS/<%=user.image%>" width="50" height="50" style="border-radius: 50%;"></div>
+                  <div class="symbol-label fs-2 fw-bolder text-dark"> <img alt="" src="<%=user.image%>" width="50" height="50" style="border-radius: 50%;"></div>
                 </div>
                 <!--begin::User account menu-->
                 <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg menu-state-color fw-semibold py-4 fs-6 w-275px" data-kt-menu="true" style="">
@@ -1029,7 +1029,7 @@ window.smartsupp||(function(d) {
                     <div class="menu-content d-flex align-items-center px-3">
                       <!--begin::Avatar-->
                       <div class="symbol symbol-50px symbol-circle me-5">
-      <div class="symbol-label fs-2 fw-bolder text-dark"><img alt="" src="/IMG_UPLOADS/<%=user.image%>" width="50" height="50" style="border-radius: 50%;"></div>
+      <div class="symbol-label fs-2 fw-bolder text-dark"><img alt="" src="<%=user.image%>" width="50" height="50" style="border-radius: 50%;"></div>
                       </div>
                       <!--end::Avatar-->
   
@@ -1257,7 +1257,7 @@ window.smartsupp||(function(d) {
                   
                       <div class="logged-user-i">
                         <div class="avatar-w">
-                          <img alt="" src="/IMG_UPLOADS/<%=user.image%>" width="50" height="50" style="border-radius: 50%;">
+                          <img alt="" src="<%=user.image%>" width="50" height="50" style="border-radius: 50%;">
                         </div>
                         
                       </div>
@@ -1298,7 +1298,8 @@ window.smartsupp||(function(d) {
                           </div>
                   </div>
   </div>
-  </div><div class="row mr-3 ml-3 mt-2 mb-5">
+  </div>
+  <div class="row mr-3 ml-3 mt-2 mb-5">
       <div class="col-md-4  ">
           <div class="card card-stats rounded  ml-5">
             <div class="card-body">
@@ -1312,6 +1313,32 @@ window.smartsupp||(function(d) {
             </div>
           </div>
         </div>
+        <!--  -->
+          <div class="col-md-4 mt-3">
+  <div class="card card-stats rounded mr-4">
+    <div class="card-body">
+      <div class="row mt-2">
+        <div class="col">
+          <h4 class="font-weight-bolder mb-1">
+            <svg class="svg-inline--fa fa-bitcoin-sign me-2 text-warning" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="bitcoin-sign" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+              <path fill="currentColor" d="M504 256c0 136.1-111 248-248 248S8 392.1 8 256 119 8 256 8s248 111.9 248 248zm-141.7-35.7c4.9-32.8-26.7-50.4-45.4-55.5l9.3-37.2-9.2-2.3-9.2 36.8c-6-1.5-12.2-2.9-18.4-4.3l9.3-37.1-9.2-2.3-9.3 37.2c-7.6-1.7-15.1-3.5-22.4-5.4l.1-.4-12.7-3.2-2.5 9.9c0 0 6.8 1.6 6.7 1.7 3.7 1 4.4 3.7 4.3 5.9l-4.3 17.3c.3 .1 6.1 1.5 6.1 1.5l-4.2 16.9c.3 .1 4.2 1.1 4.2 1.1l9.2-36.8c7.7 2.1 16.1 4.4 21.9 5.8l-9.2 36.8c6.9 1.9 12.1 3.4 16 4.9l-9.2 36.7c-7.3-1.8-30.6-10.7-35.8-5.4 0 0 6.7 1.6 6.7 1.7 26.8 6.5 31.4 23.7 30.4 37.3-1.5 10.1 6.2 15.5 16.1 19.1l-9.3 37.3 9.2 2.3 9.3-37.2c6.1 1.7 12.3 3.1 18.3 4.4l-9.3 37.2 9.2 2.3 9.3-37.2c38.2 7.2 66.8 4.3 78.8-30.1 9.7-27.9-2.4-43.9-25.7-54.2 18.2-4.2 31.9-16.2 35.6-40.9zm-63.3 89.5c-8.8 35.3-68.4 16.2-87.8 11.4l15.6-62.6c19.4 4.8 81.6 14.4 72.2 51.2zm8.8-89.6c-8 32.1-57.2 15.8-73.2 11.8l14.1-56.6c16 4 67.4 11.4 59.1 44.8z"></path>
+            </svg>
+            BTC Balance
+          </h4>
+          <p class="text-dark mb-1">Your Bitcoin wallet balance</p>
+          <p class="text-dark h3"><%= (user.btcBalance || 0).toFixed(8) %> BTC</p>
+          <a href="/swap/<%= user._id %>" class="btn btn-sm btn-warning text-dark mt-3">
+            <svg class="svg-inline--fa fa-arrow-right-arrow-left me-2" aria-hidden="true" focusable="false" data-prefix="fal" data-icon="arrow-right-arrow-left" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+              <path fill="currentColor" d="M16 160h441.4l-100.7 100.7c-6.25 6.25-6.25 16.38 0 22.62s16.38 6.25 22.62 0l128-128C510.4 152.2 512 148.1 512 144s-1.562-8.188-4.688-11.31l-128-128c-6.25-6.25-16.38-6.25-22.62 0s-6.25 16.38 0 22.62L457.4 128H16C7.156 128 0 135.2 0 144S7.156 160 16 160zM496 352H54.63l100.7-100.7c6.25-6.25 6.25-16.38 0-22.62s-16.38-6.25-22.62 0l-128 128C1.563 359.8 0 363.9 0 368s1.562 8.188 4.688 11.31l128 128c6.25 6.25 16.38 6.25 22.62 0s6.25-16.38 0-22.62L54.63 384H496c8.844 0 16-7.156 16-16S504.8 352 496 352z"></path>
+            </svg>
+            Swap to BTC
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        <!--  -->
         <div class="col-md-4 mt-3">
           <div class="card card-stats rounded mr-2 ml-2">
             <div class="card-body">
