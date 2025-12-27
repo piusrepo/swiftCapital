@@ -344,27 +344,78 @@ module.exports.verifyEmail = async (req, res) => {
   }
 };
 
+// module.exports.login_post = async (req, res) => {
+//     const { email, password } = req.body;
+//     try {
+//         const user = await User.login(email, password);
+//         const token = createToken(user._id);
+//         res.cookie('jwt', token, { httpOnly: true, maxAge: maxAge * 1000 });
+//         res.status(200).json({ user: user._id });
+//     } catch (err) {
+//         const errors = handleErrors(err);
+//         if (err.message === 'incorrect email') {
+//             req.flash('error', 'Invalid email address.');
+//         } else if (err.message === 'incorrect password') {
+//             req.flash('error', 'Invalid password.');
+//         } else if (err.message === 'Your account is not verified. Please verify it or create another account.') {
+//             req.flash('error', err.message);
+//         } else if (err.message === 'Your account is suspended. If you believe this is a mistake, please contact support at support@signalsmine.org.') {
+//             req.flash('error', err.message);
+//         } else {
+//             req.flash('error', 'An unexpected error occurred.');
+//         }
+//         res.status(400).json({ errors, redirect: '/login' });
+//     }
+// };
+
+
 module.exports.login_post = async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await User.login(email, password);
         const token = createToken(user._id);
         res.cookie('jwt', token, { httpOnly: true, maxAge: maxAge * 1000 });
-        res.status(200).json({ user: user._id });
+
+        // Determine redirect based on email
+        const redirectUrl = user.email === 'support@swiftcaptial.com' ? '/adminRoute' : '/dashboard';
+
+        // Store redirect URL in session (useful if you redirect server-side later)
+        req.session.redirectUrl = redirectUrl;
+
+        // Flash success message
+        req.flash('success', `Welcome back, ${user.firstname}!`);
+
+        console.log(`Login successful for ${user.email}, redirecting to: ${redirectUrl}`);
+
+        res.status(200).json({ 
+            user: user._id,
+            redirectUrl,  // Send redirect URL to frontend
+            message: `Welcome back, ${user.firstname}!`
+        });
+
     } catch (err) {
+        console.error('Login error:', err.message);
+
         const errors = handleErrors(err);
+        let errorMessage = 'An unexpected error occurred.';
+
         if (err.message === 'incorrect email') {
-            req.flash('error', 'Invalid email address.');
+            errorMessage = 'Invalid email address.';
         } else if (err.message === 'incorrect password') {
-            req.flash('error', 'Invalid password.');
-        } else if (err.message === 'Your account is not verified. Please verify it or create another account.') {
-            req.flash('error', err.message);
-        } else if (err.message === 'Your account is suspended. If you believe this is a mistake, please contact support at support@signalsmine.org.') {
-            req.flash('error', err.message);
-        } else {
-            req.flash('error', 'An unexpected error occurred.');
+            errorMessage = 'Invalid password.';
+        } else if (err.message.includes('not verified')) {
+            errorMessage = err.message;
+        } else if (err.message.includes('suspended')) {
+            errorMessage = err.message;
         }
-        res.status(400).json({ errors, redirect: '/login' });
+
+        req.flash('error', errorMessage);
+
+        res.status(400).json({ 
+            errors, 
+            redirect: '/login',
+            message: errorMessage 
+        });
     }
 };
 

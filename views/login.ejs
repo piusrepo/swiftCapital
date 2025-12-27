@@ -397,26 +397,44 @@
   <a href="javascript:void(0)" class="back-to-top bounce"><i class="ri-arrow-up-s-line"></i></a>
 
 
-<script>
+  <script>
 document.addEventListener('DOMContentLoaded', () => {
+  // Handle URL query params (for server-side redirects with flash)
   const urlParams = new URLSearchParams(window.location.search);
   const success = urlParams.get('success');
   const error = urlParams.get('error');
 
   if (success) {
-    Swal.fire('Success', decodeURIComponent(success), 'success');
+    Swal.fire({
+      icon: 'success',
+      title: 'Success!',
+      text: decodeURIComponent(success),
+      timer: 5000,
+      showConfirmButton: false
+    });
   }
   if (error) {
-    Swal.fire('Error', decodeURIComponent(error), 'error');
+    Swal.fire({
+      icon: 'error',
+      title: 'Login Failed',
+      text: decodeURIComponent(error)
+    });
   }
 });
 
+// Main Login Form Handler
 const form = document.querySelector('form');
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
-  const email = form.email.value.trim(); // you named it account_no but it's email
+  const email = form.email.value.trim();
   const password = form.password.value;
+
+  // Disable button and show loading
+  const btn = form.querySelector('button[type="submit"]');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span id="loader"></span> Logging in...';
 
   try {
     const res = await fetch('/login', {
@@ -426,25 +444,56 @@ form.addEventListener('submit', async (e) => {
     });
 
     const data = await res.json();
+    console.log('Login response:', data); // Debug log
 
-    if (data.errors) {
-      let msg = '';
-      Object.values(data.errors).forEach(err => { if (err) msg += err + '\n'; });
-      Swal.fire('Login Failed', msg || 'Invalid credentials', 'error');
-    }
+    if (res.ok && data.user) {
+      // Success: Show welcome message
+      Swal.fire({
+        icon: 'success',
+        title: 'Welcome back!',
+        text: data.message || `Welcome back, ${email.split('@')[0]}!`,
+        timer: 2000,
+        showConfirmButton: false
+      }).then(() => {
+        // Redirect based on backend-provided redirectUrl
+        if (data.redirectUrl) {
+          window.location.href = data.redirectUrl;
+        } else {
+          window.location.href = '/dashboard'; // fallback
+        }
+      });
+    } else {
+      // Error handling
+      let errorMsg = data.message || 'Invalid credentials. Please try again.';
 
-    if (data.user) {
-      location.assign('/dashboard'); // or wherever authenticated users go
-    }
+      if (data.errors) {
+        // Combine all error messages
+        errorMsg = Object.values(data.errors)
+          .filter(err => err)
+          .join('\n') || errorMsg;
+      }
 
-    if (data.redirect) {
-      window.location.href = data.redirect;
+      Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        text: errorMsg
+      });
     }
   } catch (err) {
-    Swal.fire('Error', 'Connection failed', 'error');
+    console.error('Network error:', err);
+    Swal.fire({
+      icon: 'error',
+      title: 'Connection Error',
+      text: 'Unable to connect to server. Please check your internet connection.'
+    });
+  } finally {
+    // Re-enable button
+    btn.disabled = false;
+    btn.innerHTML = originalText;
   }
 });
 </script>
+
 
   <!-- <script data-cfasync="false" src="https://capitalswiss.click/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script> -->
   <!-- <script data-cfasync="false" src="https://cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script> -->
