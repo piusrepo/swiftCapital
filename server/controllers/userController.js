@@ -437,38 +437,34 @@ const sendOTP = async (user) => {
 // Updated localtransferPage_post
 module.exports.localtransferPage_post = async (req, res) => {
     try {
-        const { id } = req.params;
+          const { id } = req.params;
         const user = await User.findById(id);
+        const { amount, transferFrom } = req.body;
 
-        if (user.balance === 0) {
-            req.flash("infoErrors", "Insufficient funds, kindly fund your account");
-            return res.redirect("/localtransfer");
-        }
-
-        // Validate sufficient balance
-        const transferAmount = parseFloat(req.body.amount);
+        const transferAmount = parseFloat(amount);
         if (isNaN(transferAmount) || transferAmount <= 0) {
-            req.flash("infoErrors", "Invalid transfer amount.");
+            req.flash('error', 'Invalid transfer amount.');
             return res.redirect("/localtransfer");
         }
 
-        if (user.balance < transferAmount) {
-            req.flash("infoErrors", "Insufficient balance for this transfer.");
+        let selectedBalance = transferFrom === 'btc' ? (user.btcBalance || 0) : user.balance;
+
+        if (transferAmount > selectedBalance) {
+            req.flash('error', `Insufficient ${transferFrom === 'btc' ? 'BTC' : 'USD'} balance.`);
             return res.redirect("/localtransfer");
         }
-
         // Store transfer data in session
-        req.session.transferData = req.body;
+         req.session.transferData = { ...req.body, transferFrom };
         req.session.transferType = "local";
 
         // Check if OTP is suspended
         if (user.otpSuspended) {
-            req.flash("infoErrors", "OTP verification is suspended. Please contact admin for CTO code.");
+            req.flash("error", "OTP verification is suspended. Please contact admin for CTO code.");
         } else {
             // Generate and send OTP
             const otpSent = await sendOTP(user);
             if (!otpSent) {
-                req.flash("infoErrors", "Failed to send OTP. Please try again.");
+                req.flash("error", "Failed to send OTP. Please try again.");
                 return res.redirect("/localtransfer");
             }
         }
@@ -477,11 +473,10 @@ module.exports.localtransferPage_post = async (req, res) => {
         return res.render("otp-verification", {
             user,
             transferType: "local",
-            infoErrorsObj: req.flash("infoErrors"),
-            infoSubmitObj: req.flash("infoSubmit"),
+             messages: req.flash(),
         });
     } catch (error) {
-        req.flash("infoErrors", error.message);
+         req.flash('error', error.message || 'Transfer failed');
         res.redirect("/localtransfer");
     }
 };
@@ -540,7 +535,6 @@ module.exports.internationaltransferPage_post = async (req, res) => {
         res.redirect("/internationaltransfer");
     }
 };
-
 
 module.exports.verifyOTP = async (req, res) => {
     try {
@@ -793,9 +787,7 @@ module.exports.transferHistoryPage = async (req, res) => {
 };
 
 module.exports.localtransferPage = async (req, res) => {
-    const infoErrorsObj = req.flash('infoErrors');
-    const infoSubmitObj = req.flash('infoSubmit');
-    res.render('localtransfer', { infoErrorsObj, infoSubmitObj });
+    res.render('localtransfer');
 };
 
 module.exports.buyPlanPage = async (req, res) => {
