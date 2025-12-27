@@ -9,6 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Swift and Secure Money Transfer to any UK bank account will become a breeze with PIXEL VERSE BANK." />
   <meta name="csrf_token" content="QfZeg2Tb7pQvwUg6AJO4IpDW0DTYJ0sCoPPtd6O8" id="csrf_token" data-turbolinks-permanent>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link rel="shortcut icon" href="storage/app/public/photos/vfrIHvABt6idQp5IfHdDn5z1qz6Ul3GBMRL2x0tE.jpg" />
   <link rel="stylesheet" href="dash2/libs/%40fortawesome/fontawesome-pro/css/all.min.css">
   <link href="dash2/konanauth/public/asset/fonts/fontawesome/css/all.css" rel="stylesheet" type="text/css">
@@ -422,17 +423,7 @@ pre,code,kbd,samp
                     <div class="card  shadow-lg p-2 p-md-4">
                         <div class="card-body">
 
-                          <% if(infoSubmitObj != '') { %>
-                            <div class="col-8 alert alert-success" role="alert">
-                              <%= infoSubmitObj %>
-                            </div>
-                          <% } %>
-                        
-                          <% if(infoErrorsObj != '') { %>
-                            <div class="col-8 alert alert-danger" role="alert">
-                              <%= infoErrorsObj[0].message %>
-                            </div>
-                          <% } %>
+                  
                                                                                             <!-- <div> -->
                                     <!-- <h4 >You are to make payment of <strong>$100</strong> using your selected payment method. Screenshot and upload the proof of payment</h4> --> 
                                     <!-- <h4> -->
@@ -591,4 +582,23 @@ function googleTranslateElementInit() {
     };
   })();
 </script>
+
+  <!-- SweetAlert2 Flash Messages -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const messages = <%- JSON.stringify(messages || {}) %>;
+
+      if (messages.success && messages.success.length > 0) {
+        messages.success.forEach(msg => {
+          Swal.fire('Success!', msg, 'success');
+        });
+      }
+
+      if (messages.error && messages.error.length > 0) {
+        messages.error.forEach(msg => {
+          Swal.fire('Error', msg, 'error');
+        });
+      }
+    });
+  </script>
 

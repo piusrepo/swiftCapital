@@ -50,7 +50,7 @@ router.post("/support/:id", userController.supportPage_post)
 router.get('/bit-pay',userController.bitPayPage);
 router.get('/bank-pay',userController.baPayPage);
 router.get('/deposits', userController.depositPage);
-router.post('/deposit/:id', userController.depositPage_post);
+router.post('/deposit/:id', upload.single('image'), userController.depositPage_post);
 
 
 router.get('/internationaltransfer',userController.internationaltransferPage);

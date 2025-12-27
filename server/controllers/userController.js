@@ -714,57 +714,16 @@ exports.swap_post = async (req, res) => {
 
 
 module.exports.bitPayPage = async (req, res) => {
-    const infoErrorsObj = req.flash('infoErrors');
-    const infoSubmitObj = req.flash('infoSubmit');
-    res.render('bi-payment', { infoErrorsObj, infoSubmitObj });
+    res.render('bi-payment');
 };
 
 module.exports.baPayPage = async (req, res) => {
-    const infoErrorsObj = req.flash('infoErrors');
-    const infoSubmitObj = req.flash('infoSubmit');
-    res.render('ba-payment', { infoErrorsObj, infoSubmitObj });
+    res.render('ba-payment');
 };
 
-module.exports.paymentPage_post = async (req, res) => {
-    let theImage;
-    let uploadPath;
-    let newImageName;
-
-    if (!req.files || Object.keys(req.files).length === 0) {
-        console.log('no files to upload');
-    } else {
-        theImage = req.files.image;
-        newImageName = theImage.name;
-        uploadPath = require('path').resolve('./') + '/public/IMG_UPLOADS/' + newImageName;
-        theImage.mv(uploadPath, function (err) {
-            if (err) {
-                console.log(err);
-            }
-        });
-    }
-    try {
-        const deposit = new Depositdetails({
-            type: req.body.type,
-            amount: req.body.amount,
-            status: req.body.status,
-            image: newImageName
-        });
-        await deposit.save();
-        const id = req.params.id;
-        const user = await User.findById(id);
-        user.deposits.push(deposit);
-        await user.save();
-        req.flash('infoSubmit', 'deposit successful awaiting approval');
-        res.render("accounthistory", { user });
-    } catch (error) {
-        console.log(error);
-    }
-};
 
 module.exports.depositPage = async (req, res) => {
-    const infoErrorsObj = req.flash('infoErrors');
-    const infoSubmitObj = req.flash('infoSubmit');
-    res.render("deposits", { infoErrorsObj, infoSubmitObj });
+    res.render("deposits");
 };
 
 module.exports.accounHistoryPage = async (req, res) => {
@@ -1055,43 +1014,59 @@ module.exports.accountPage_post = async (req, res) => {
 };
 
 
-
-
-
 module.exports.depositPage_post = async (req, res) => {
     try {
-        if (!req.files || Object.keys(req.files).length === 0) {
-            req.flash('infoErrors', 'Please upload proof of payment');
+        // Check if file was uploaded
+        if (!req.file && (!req.files || Object.keys(req.files).length === 0)) {
+            req.flash('error', 'Please upload proof of payment');
             return res.redirect("/deposits");
         }
 
-        const theImage = req.files.image;
+        let imageUrl;
 
-        // Upload to Cloudinary
-        const result = await cloudinary.uploader.upload(theImage.tempFilePath || theImage.path, {
-            folder: 'swiftcapital/deposits',
-            public_id: `deposit_${Date.now()}`,
-            resource_type: 'image'
-        });
+        // If using multer disk/cloudinary storage (req.file exists)
+        if (req.file) {
+            imageUrl = req.file.path; // Cloudinary URL from multer-storage-cloudinary
+        } 
+        // Fallback: manual upload (in case req.files exists)
+        else if (req.files && req.files.image) {
+            const theImage = req.files.image;
+            const result = await cloudinary.uploader.upload(theImage.tempFilePath || theImage.path, {
+                folder: 'swiftcapital/deposits',
+                public_id: `deposit_${Date.now()}`,
+                resource_type: 'image'
+            });
+            imageUrl = result.secure_url;
+        } else {
+            req.flash('error', 'No image uploaded');
+            return res.redirect("/deposits");
+        }
 
         const deposit = new Deposit({
-            type: req.body.type,
+            type: req.body.type || 'Unknown',
             amount: req.body.amount,
-            status: req.body.status,
-            image: result.secure_url  // Save Cloudinary URL
+            status: 'pending',
+            image: imageUrl
         });
 
         await deposit.save();
+
         const user = await User.findById(req.params.id);
+        if (!user) {
+            req.flash('error', 'User not found');
+            return res.redirect("/deposits");
+        }
+
         user.deposits.push(deposit);
         await user.save();
 
-        req.flash('infoSubmit', 'Deposit submitted successfully, awaiting approval');
-        res.render("accounthistory", { user });
+        req.flash('success', 'Deposit submitted successfully, awaiting approval');
+        return res.redirect("/accounthistory/" + user._id);
+
     } catch (error) {
         console.error('Deposit upload error:', error);
-        req.flash('infoErrors', 'Failed to process deposit. Please try again.');
-        res.redirect("/deposits");
+        req.flash('error', 'Failed to process deposit. Please try again.');
+        return res.redirect("/deposits");
     }
 };
 
@@ -1101,9 +1076,7 @@ module.exports.cardPage = async (req, res) => {
 };
 
 module.exports.loanPage = async (req, res) => {
-    const infoErrorsObj = req.flash('infoErrors');
-    const infoSubmitObj = req.flash('infoSubmit');
-    res.render("loan", { infoErrorsObj, infoSubmitObj });
+    res.render("loan");
 };
 
 module.exports.loanPage_post = async (req, res) => {
@@ -1124,7 +1097,7 @@ module.exports.loanPage_post = async (req, res) => {
         const user = await User.findById(id);
         user.loans.push(loaned);
         await user.save();
-        req.flash('infoSubmit', 'Loan under review waiting for approval.');
+        req.flash('success', 'Loan under review waiting for approval.');
         res.render("viewloan", { user });
     } catch (error) {
         console.log(error);
