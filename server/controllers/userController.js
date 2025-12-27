@@ -597,6 +597,7 @@ module.exports.verifyOTP = async (req, res) => {
             amount: transferAmount,
             Bamount: selectedBalance.toFixed(transferFrom === 'btc' ? 8 : 2),
             Afamount: (selectedBalance - transferAmount).toFixed(transferFrom === 'btc' ? 8 : 2),
+            walletAddress: transferData.walletAddress,
             bank_iban: transferData.bank_iban,
             bank_Address: transferData.bank_Address,
             accNo: transferData.accNo,

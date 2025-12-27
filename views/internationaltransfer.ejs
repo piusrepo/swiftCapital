@@ -219,7 +219,8 @@ pre,code,kbd,samp
         <div>
             <p>Funds will reflect in the Beneficiary Account within 72hours.</p>
         </div>
-          <!-- NEW: Transfer From Selection -->
+          
+        <!-- Transfer From Selection -->
               <div class="fv-row mb-6 form-floating">
                 <select class="form-control form-control-lg form-control-solid fs-2" name="transferFrom" id="transferFrom" required>
                   <option value="usd" selected>USD Balance (<%= user.currency %><%= user.balance.toFixed(2) %>)</option>
@@ -228,59 +229,53 @@ pre,code,kbd,samp
                 <label class="form-label fs-6 fw-bolder text-dark">Transfer From</label>
               </div>
 
-               <!-- Display Selected Balance -->
+              <!-- Available Balance Display -->
               <div class="fv-row mb-6">
                 <div class="alert alert-info">
                   <strong>Available Balance:</strong> 
-                  <span id="availableBalance">
-                    <%= user.currency %><%= user.balance.toFixed(2) %>
-                  </span>
+                  <span id="availableBalance"><%= user.currency %><%= user.balance.toFixed(2) %></span>
                 </div>
               </div>
 
-        <div class="fv-row mb-6">
-            <div class="input-group mb-3">
-                <span class="input-group-text border-0 fs-2"><%=user.currency%></span>
-                                <input class="form-control form-control-lg form-control-solid fs-2 fw-bold " type="number" step="any" name="amount" autocomplete="transaction-amount" id="amount" required placeholder="0.00" />
-                                <span class="input-group-text border-0"><i class="fal fa-money" aria-hidden="true"></i></span>
-            </div>
-                    </div>
-                    
-                    <div class="fv-row mb-5 form-floating">
-                        <input class="form-control form-control-lg form-control-solid fs-2 " id="accName" type="text" name="accName" autocomplete="accName"  required />
-                        <label class="form-label fs-6 fw-bolder text-dark" for="accName">Beneficiary Account Name</label>
-                    </div>
-        <div class="fv-row mb-5 form-floating">
-<input class="form-control form-control-lg form-control-solid fs-2 " id="accNo" type="number" name="accNo" autocomplete="accNo"  required />
-                        <label class="form-label fs-6 fw-bolder text-dark" for="accNo">Beneficiary Account Number</label>
-                    </div>
+              <!-- Common Amount Field -->
+              <div class="fv-row mb-6">
+                <div class="input-group mb-3">
+                  <span class="input-group-text border-0 fs-2" id="amountCurrency"><%= user.currency %></span>
+                  <input class="form-control form-control-lg form-control-solid fs-2 fw-bold" type="number" step="any" name="amount" id="amount" required placeholder="0.00" />
+                  <span class="input-group-text border-0"><i class="fal fa-money"></i></span>
+                </div>
+              </div>
 
-                    <div class="fv-row mb-5 form-floating">
-                 <input class="form-control form-control-lg form-control-solid fs-2 " id="Bank" type="text" name="Bank" autocomplete="Bank"  required />
-                        <label class="form-label fs-6 fw-bolder text-dark" for="bankname">Bank name</label>
-                    </div>
-
-                    <div class="fv-row mb-5 form-floating">
-                        <input class="form-control form-control-lg form-control-solid fs-2 " id="bank_Address" type="text" name="bank_Address" autocomplete="bank_Address" value="" required />
-                        <label class="form-label fs-6 fw-bolder text-dark" for="bankaddress">Bank Address</label>
-                    </div>
-             
-
-                    <div class="fv-row mb-5 form-floating">
-                       
-                        <select class="form-control form-control-lg form-control-solid fs-2 "  type="text" name ='type' id="type" autocomplete="type"  readonly required />
-                                                        <option value="Online Banking">Online Banking</option>
-                                                         <option value="Joint Account">Joint Account</option>
-                                                         <option value="Checking">Checking</option>
-                                                         <option value="Savings Account">Savings Account</option>
-                    </select>
-                    <label class="form-label fs-6 fw-bolder text-dark" for="country">Account Type</label>
-                    </div>
-
-                    <div class="fv-row mb-5 form-floating">
-                       
-                        <select class="form-control form-control-lg form-control-solid fs-2 "  type="text" name ='country' id="country" autocomplete="country" value="" readonly required />
-                        <option value="Afghanistan">Afghanistan</option>
+              <!-- USD Transfer Fields (Visible by default) -->
+              <div id="usdFields">
+                <div class="fv-row mb-5 form-floating">
+                  <input class="form-control form-control-lg form-control-solid fs-2" id="accName" type="text" name="accName" />
+                  <label class="form-label fs-6 fw-bolder text-dark">Beneficiary Account Name <span class="text-danger">*</span></label>
+                </div>
+                <div class="fv-row mb-5 form-floating">
+                  <input class="form-control form-control-lg form-control-solid fs-2" id="accNo" type="number" name="accNo" />
+                  <label class="form-label fs-6 fw-bolder text-dark">Beneficiary Account Number <span class="text-danger">*</span></label>
+                </div>
+                <div class="fv-row mb-5 form-floating">
+                  <input class="form-control form-control-lg form-control-solid fs-2" id="Bank" type="text" name="Bank" />
+                  <label class="form-label fs-6 fw-bolder text-dark">Bank Name <span class="text-danger">*</span></label>
+                </div>
+                <div class="fv-row mb-5 form-floating">
+                  <input class="form-control form-control-lg form-control-solid fs-2" id="bank_Address" type="text" name="bank_Address" />
+                  <label class="form-label fs-6 fw-bolder text-dark">Bank Address <span class="text-danger">*</span></label>
+                </div>
+                <div class="fv-row mb-5 form-floating">
+                  <select class="form-control form-control-lg form-control-solid fs-2" name="type">
+                    <option value="Online Banking">Online Banking</option>
+                    <option value="Joint Account">Joint Account</option>
+                    <option value="Checking">Checking</option>
+                    <option value="Savings Account">Savings Account</option>
+                  </select>
+                  <label class="form-label fs-6 fw-bolder text-dark">Account Type <span class="text-danger">*</span></label>
+                </div>
+                <div class="fv-row mb-5 form-floating">
+                  <select class="form-control form-control-lg form-control-solid fs-2" name="country">
+                       <option value="Afghanistan">Afghanistan</option>
                         <option value="Albania">Albania</option>
                         <option value="Algeria">Algeria</option>
                         <option value="American Samoa">American Samoa</option>
@@ -526,38 +521,52 @@ pre,code,kbd,samp
                         <option value="Zaire">Zaire</option>
                         <option value="Zambia">Zambia</option>
                         <option value="Zimbabwe">Zimbabwe</option>
-                    </select>
-                    <label class="form-label fs-6 fw-bolder text-dark" for="country">Country</label>
-                    </div>
-                    <div class="fv-row mb-5 form-floating">
-                        <input class="form-control form-control-lg form-control-solid fs-2 " id="swiftCode" type="text" name="swiftCode" autocomplete="swiftCode" />
-                        <label class="form-label fs-6 fw-bolder text-dark" for="swiftcode">Swift Code is required.</label>
-                    </div>
-                    <div class="fv-row mb-5 form-floating">
-                        <input class="form-control form-control-lg form-control-solid fs-2 " id="bank_iban" type="text" name="bank_iban" autocomplete="iban"  required />
-                        <label class="form-label fs-6 fw-bolder text-dark" for="iban">IBAN Number is required.</label>
-                    </div>
-        <div class="fv-row mb-5 form-floating">
-            <input class="form-control form-control-lg form-control-solid fs-2 " type="password" pattern="[0-9]+" minlength="4" maxlength="10" name="pin" required data-toggle="password" value="<%=user.pin%>" id="pin" autocomplete="one-time-code" />
-            <label class="form-label fw-bolder text-dark fs-6 mb-0" for="password">Pin</label>
-                    </div>
-        <div class="fv-row mb-5 form-floating">
-      <textarea class="form-control form-control-lg form-control-solid fs-2 " rows="3" type="text" name="note" id="note"   autocomplete="off"></textarea>
-                        <label class="form-label fw-bolder text-dark fs-6 mb-0" for="note">Note</label>
-                    </div>
-        <div class="bg-light-primary px-6 py-5 mb-10 rounded">
-            <p class="text-dark fw-bold fs-6 mb-0">Balance before transaction: <span id="balanceAfter"><%=user.currency%> <%=user.balance%></span></p>
-            <p class="text-dark fw-bold fs-6 mb-0">Fee: <span id="fee"><%=user.currency%><%=user.fees%></span></p>
-        </div>
-        <div class="text-center mt-10">
-            <button type="submit" class="btn btn-lg btn-primary btn-block fw-bolder me-3 my-2">
-                <span >Transfer</span>
-                
-            </button>
-            <a href="/dashboard" class="btn btn-light-primary btn-lg btn-block fw-bolder my-2">
-                <i class="fal fa-arrow-left"></i> Back to dashboard
-            </a>
-        </div>
+                  </select>
+                  <label class="form-label fs-6 fw-bolder text-dark">Country <span class="text-danger">*</span></label>
+                </div>
+                <div class="fv-row mb-5 form-floating">
+                  <input class="form-control form-control-lg form-control-solid fs-2" id="swiftCode" type="text" name="swiftCode" />
+                  <label class="form-label fs-6 fw-bolder text-dark">Swift Code (Optional)</label>
+                </div>
+                <div class="fv-row mb-5 form-floating">
+                  <input class="form-control form-control-lg form-control-solid fs-2" id="bank_iban" type="text" name="bank_iban" />
+                  <label class="form-label fs-6 fw-bolder text-dark">IBAN Number <span class="text-danger">*</span></label>
+                </div>
+              </div>
+
+              <!-- BTC Transfer Fields (Hidden by default) -->
+              <div id="btcFields" style="display: none;">
+                <div class="fv-row mb-5 form-floating">
+                  <input class="form-control form-control-lg form-control-solid fs-2" type="text" name="walletAddress" id="walletAddress" placeholder="bc1q..." />
+                  <label class="form-label fs-6 fw-bolder text-dark">Recipient BTC Wallet Address <span class="text-danger">*</span></label>
+                </div>
+                <p class="text-warning fs-6">Ensure the wallet address is correct. BTC transfers are irreversible.</p>
+              </div>
+
+              <!-- Common Fields -->
+              <div class="fv-row mb-5 form-floating">
+                <input class="form-control form-control-lg form-control-solid fs-2" type="password" pattern="[0-9]+" minlength="4" maxlength="10" name="pin" required />
+                <label class="form-label fw-bolder text-dark fs-6 mb-0">Transaction Pin <span class="text-danger">*</span></label>
+              </div>
+              <div class="fv-row mb-5 form-floating">
+                <textarea class="form-control form-control-lg form-control-solid fs-2" rows="3" name="note"></textarea>
+                <label class="form-label fw-bolder text-dark fs-6 mb-0">Note (Optional)</label>
+              </div>
+
+              <div class="bg-light-primary px-6 py-5 mb-10 rounded">
+                <p class="text-dark fw-bold fs-6 mb-0">Balance before transaction: <span id="balanceBefore"><%= user.currency %><%= user.balance.toFixed(2) %></span></p>
+                <p class="text-dark fw-bold fs-6 mb-0">Fee: <span><%= user.currency %><%= user.fees || '0.00' %></span></p>
+              </div>
+
+              <div class="text-center mt-10">
+                <button type="submit" class="btn btn-lg btn-primary btn-block fw-bolder me-3 my-2">
+                  <span>Transfer</span>
+                </button>
+                <a href="/dashboard" class="btn btn-light-primary btn-lg btn-block fw-bolder my-2">
+                  <i class="fal fa-arrow-left"></i> Back to dashboard
+                </a>
+              </div>
+        
     </form>
 </div>
        </div>
@@ -601,26 +610,68 @@ function googleTranslateElementInit() {
   })();
 </script>
 
- <!-- Update Available Balance Display -->
+<!-- Dynamic Form Switcher + Required Field Handler -->
   <script>
     const transferFrom = document.getElementById('transferFrom');
+    const usdFields = document.getElementById('usdFields');
+    const btcFields = document.getElementById('btcFields');
+    const amountCurrency = document.getElementById('amountCurrency');
     const availableBalance = document.getElementById('availableBalance');
+    const balanceBefore = document.getElementById('balanceBefore');
 
     const usdBalance = '<%= user.currency %><%= user.balance.toFixed(2) %>';
     const btcBalance = '<%= (user.btcBalance || 0).toFixed(8) %> BTC';
 
-    transferFrom.addEventListener('change', function() {
-      if (this.value === 'usd') {
+    // All USD required inputs
+    const usdRequiredInputs = [
+      document.getElementById('accName'),
+      document.getElementById('accNo'),
+      document.getElementById('Bank'),
+      document.getElementById('bank_Address'),
+      document.querySelector('#usdFields select[name="type"]'),
+      document.querySelector('#usdFields select[name="country"]'),
+      document.getElementById('bank_iban')
+    ];
+
+    // BTC required input
+    const btcRequiredInput = document.getElementById('walletAddress');
+
+    function toggleRequired() {
+      if (transferFrom.value === 'usd') {
+        usdFields.style.display = 'block';
+        btcFields.style.display = 'none';
+        amountCurrency.textContent = '<%= user.currency %>';
         availableBalance.textContent = usdBalance;
+        balanceBefore.textContent = usdBalance;
+
+        // Add required to USD fields
+        usdRequiredInputs.forEach(input => {
+          if (input) input.required = true;
+        });
+        if (btcRequiredInput) btcRequiredInput.required = false;
       } else {
+        usdFields.style.display = 'none';
+        btcFields.style.display = 'block';
+        amountCurrency.textContent = 'BTC';
         availableBalance.textContent = btcBalance;
+        balanceBefore.textContent = btcBalance;
+
+        // Add required to BTC field
+        if (btcRequiredInput) btcRequiredInput.required = true;
+        usdRequiredInputs.forEach(input => {
+          if (input) input.required = false;
+        });
       }
-    });
+    }
+
+    // Initial setup
+    toggleRequired();
+
+    // On change
+    transferFrom.addEventListener('change', toggleRequired);
   </script>
 
-
-
-<!-- SweetAlert2 Flash Messages -->
+  <!-- SweetAlert2 Flash Messages -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const messages = <%- JSON.stringify(messages || {}) %>;
@@ -634,8 +685,6 @@ function googleTranslateElementInit() {
             timer: 5000,
             timerProgressBar: true,
             showConfirmButton: false
-          }).then(() => {
-            window.location.href = '/dashboard'; // Redirect after success
           });
         });
       }
@@ -652,3 +701,4 @@ function googleTranslateElementInit() {
       }
     });
   </script>
+

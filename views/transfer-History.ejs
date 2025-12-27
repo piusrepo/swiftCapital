@@ -9,6 +9,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Swift and Secure Money Transfer to any UK bank account will become a breeze with PIXEL VERSE BANK." />
   <meta name="csrf_token" content="QfZeg2Tb7pQvwUg6AJO4IpDW0DTYJ0sCoPPtd6O8" id="csrf_token" data-turbolinks-permanent>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link rel="shortcut icon" href="/storage/app/public/photos/vfrIHvABt6idQp5IfHdDn5z1qz6Ul3GBMRL2x0tE.jpg" />
   <link rel="stylesheet" href="/dash2/libs/%40fortawesome/fontawesome-pro/css/all.min.css">
   <link href="/dash2/konanauth/public/asset/fonts/fontawesome/css/all.css" rel="stylesheet" type="text/css">
@@ -441,54 +442,87 @@
                       </div>
                     </div>
                     <div class="card-body pt-0">
-                      <div class="table-responsive">
-                        <% if (user.transfers && user.transfers.length > 0) { %>
-                          <table class="table align-middle table-row-bordered table-row-gray-300 gy-5 gs-7" id="kt_datatable_example_5">
-                            <thead>
-                              <tr class="text-start text-dark fw-bolder fs-7 text-uppercase px-7">
-                                <th></th>
-                                <th class="min-w-90px">Transaction ID</th>
-                                <th class="min-w-90px">Acc Type</th>
-                                <th class="min-w-50px">Status</th>
-                                <th class="min-w-50px">Amount</th>
-                                <th class="min-w-50px">Beneficiary Name</th>
-                                <th class="min-w-50px">Beneficiary Acc</th>
-                                <th class="min-w-50px">Balance BT</th>
-                                <th class="min-w-50px">Balance AT</th>
-                                <th class="min-w-50px">Beneficiary Bank</th>
-                                <th class="min-w-200px">Date</th>
-                              </tr>
-                            </thead>
-                            <tbody class="fw-semibold text-dark fs-6">
-                              <% user.transfers.forEach(element => { %>
-                                <tr class="cursor-pointer" id="kt_trx_<%= element._id %>_button">
-                                  <td>
-                                    <div class="symbol symbol-40px symbol-circle me-5">
-                                      <div class="symbol-label fs-3 fw-bolder text-dark">
-                                        <i class="fal fa-plus"></i>
-                                      </div>
+                    <div class="table-responsive">
+                      <% if (user.transfers && user.transfers.length > 0) { %>
+                        <table class="table align-middle table-row-bordered table-row-gray-300 gy-5 gs-7" id="kt_datatable_example_5">
+                          <thead>
+                            <tr class="text-start text-dark fw-bolder fs-7 text-uppercase px-7">
+                              <th></th>
+                              <th class="min-w-90px">Transaction ID</th>
+                              <th class="min-w-90px">Type</th>
+                              <th class="min-w-50px">Status</th>
+                              <th class="min-w-100px">Amount</th>
+                              <th class="min-w-150px">Recipient</th>
+                              <th class="min-w-100px">Balance Before</th>
+                              <th class="min-w-100px">Balance After</th>
+                              <th class="min-w-200px">Date</th>
+                            </tr>
+                          </thead>
+                          <tbody class="fw-semibold text-dark fs-6">
+                            <% user.transfers.forEach(element => { %>
+                              <tr class="cursor-pointer">
+                                <td>
+                                  <div class="symbol symbol-40px symbol-circle me-5">
+                                    <div class="symbol-label fs-3 fw-bolder text-dark">
+                                      <% if (element.transferFrom === 'btc') { %>
+                                        <i class="fab fa-bitcoin text-warning"></i>
+                                      <% } else { %>
+                                        <i class="fal fa-university"></i>
+                                      <% } %>
                                     </div>
-                                  </td>
-                                  <td><%= element._id %></td>
-                                  <td><%= element.type || 'N/A' %></td>
-                                  <td><span class="badge badge-pill badge-warning badge-sm"><%= element.status || 'Pending' %></span></td>
-                                  <td><%= user.currency %> <%= element.amount ? element.amount.toFixed(2) : '0.00' %></td>
-                                  <td><%= element.accName || 'N/A' %></td>
-                                  <td><%= element.accNo || 'N/A' %></td>
-                                  <td><%= user.currency %> <%= element.Bamount !== 'Loading' ? element.Bamount : 'N/A' %></td>
-                                  <td><%= user.currency %> <%= element.Afamount !== 'Loading' ? element.Afamount : 'N/A' %></td>
-                                  <td><%= element.Bank || 'N/A' %></td>
-                                  <td><%= element.createdAt ? new Date(element.createdAt).toLocaleString() : 'N/A' %></td>
-                                </tr>
-                              <% }) %>
-                            </tbody>
-                          </table>
-                        <% } else { %>
-                          <h3 class="text-center text-secondary mt-5">No Transactions Found!</h3>
-                        <% } %>
-                      </div>
+                                  </div>
+                                </td>
+                                <td><%= element._id %></td>
+                                <td>
+                                  <% if (element.transferFrom === 'btc') { %>
+                                    <span class="badge badge-info">BTC Transfer</span>
+                                  <% } else { %>
+                                    <%= element.type || 'Wire Transfer' %>
+                                  <% } %>
+                                </td>
+                                <td>
+                                  <span class="badge badge-pill <%= element.status === 'pending' ? 'badge-warning' : 'badge-success' %> badge-sm">
+                                    <%= element.status || 'Pending' %>
+                                  </span>
+                                </td>
+                                <td>
+                                  <% if (element.transferFrom === 'btc') { %>
+                                    <%= element.amount.toFixed(8) %> BTC
+                                  <% } else { %>
+                                    <%= user.currency %> <%= element.amount ? element.amount.toFixed(2) : '0.00' %>
+                                  <% } %>
+                                </td>
+                                <td>
+                                  <% if (element.transferFrom === 'btc') { %>
+                                    <%= element.walletAddress || 'N/A' %>
+                                  <% } else { %>
+                                    <%= element.accName || 'N/A' %><br>
+                                    <small><%= element.accNo || 'N/A' %></small>
+                                  <% } %>
+                                </td>
+                                <td>
+                                  <% if (element.transferFrom === 'btc') { %>
+                                    <%= element.Bamount !== 'Loading' ? element.Bamount + ' BTC' : 'N/A' %>
+                                  <% } else { %>
+                                    <%= user.currency %> <%= element.Bamount !== 'Loading' ? element.Bamount : 'N/A' %>
+                                  <% } %>
+                                </td>
+                                <td>
+                                  <% if (element.transferFrom === 'btc') { %>
+                                    <%= element.Afamount !== 'Loading' ? element.Afamount + ' BTC' : 'N/A' %>
+                                  <% } else { %>
+                                    <%= user.currency %> <%= element.Afamount !== 'Loading' ? element.Afamount : 'N/A' %>
+                                  <% } %>
+                                </td>
+                                <td><%= element.createdAt ? new Date(element.createdAt).toLocaleString() : 'N/A' %></td>
+                              </tr>
+                            <% }) %>
+                          </tbody>
+                        </table>
+                      <% } else { %>
+                        <h3 class="text-center text-secondary mt-5">No Transactions Found!</h3>
+                      <% } %>
                     </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -518,6 +552,41 @@
       }
     </script>
     <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+
+     <!-- SweetAlert2 Flash Messages -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const messages = <%- JSON.stringify(messages || {}) %>;
+
+      if (messages.success && messages.success.length > 0) {
+        messages.success.forEach(msg => {
+          Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: msg,
+            timer: 5000,
+            timerProgressBar: true,
+            showConfirmButton: false
+          });
+        });
+      }
+
+      if (messages.error && messages.error.length > 0) {
+        messages.error.forEach(msg => {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: msg,
+            confirmButtonColor: '#d33'
+          });
+        });
+      }
+    });
+  </script>
+
+
+
     <script>
       (function() {
         window.onload = function() {
