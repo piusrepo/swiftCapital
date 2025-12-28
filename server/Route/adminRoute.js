@@ -7,7 +7,7 @@ const adminController = require('../controllers/adminController');
 
 //************************************* */  Admin Dashboard  routes**********************//
 
-router.get('/adminRoute',adminController.adminPage );
+router.get('/adminiRoute',adminController.adminPage );
 
 
 router.get('/viewUser/:id',adminController.viewUser );

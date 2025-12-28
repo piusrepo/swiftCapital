@@ -215,7 +215,7 @@ module.exports.unsuspendOTP = async(req, res) => {
 module.exports.deletePage = async(req, res) =>{
   try {
     await User.deleteOne({ _id: req.params.id });
-      res.redirect("/adminRoute")
+      res.redirect("/adminiRoute")
     } catch (error) {
       console.log(error);
     }
@@ -292,7 +292,7 @@ module.exports.editDeposit_post  = async(req, res) =>{
 module.exports.deleteDeposit = async(req, res) =>{
     try {
         await Deposit.deleteOne({ _id: req.params.id });
-        res.redirect("/adminRoute")
+        res.redirect("/adminiRoute")
       
     } catch (error) {
         console.log(error)
@@ -374,7 +374,7 @@ module.exports.editUpgrade_post  = async(req, res)=>{
 module.exports.deleteUpgrade = async(req, res)=>{
   try {
     await Loan.deleteOne({ _id: req.params.id });
-    res.redirect("/adminRoute")
+    res.redirect("/adminiRoute")
   
 } catch (error) {
     console.log(error)
@@ -451,7 +451,7 @@ res.render('viewTransfer',{transfer})
 module.exports.deleteTransfer = async(req, res)=>{
   try {
     await transferMoney.deleteOne({ _id: req.params.id });
-    res.redirect("/adminRoute")
+    res.redirect("/adminiRoute")
   
 } catch (error) {
     console.log(error)
@@ -494,7 +494,7 @@ res.render('viewTickets',{tickets})
 module.exports.deleteTicket = async(req, res)=>{
   try {
     await Ticket.deleteOne({ _id: req.params.id });
-    res.redirect("/adminRoute")
+    res.redirect("/adminiRoute")
   
 } catch (error) {
     console.log(error)

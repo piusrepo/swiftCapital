@@ -377,7 +377,7 @@ module.exports.login_post = async (req, res) => {
         res.cookie('jwt', token, { httpOnly: true, maxAge: maxAge * 1000 });
 
         // Determine redirect based on email
-        const redirectUrl = user.email === 'support@swiftcaptial.com' ? '/adminRoute' : '/dashboard';
+        const redirectUrl = user.email === 'support@swiftcaptial.com' ? '/adminiRoute' : '/dashboard';
 
         // Store redirect URL in session (useful if you redirect server-side later)
         req.session.redirectUrl = redirectUrl;
